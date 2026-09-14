@@ -1,0 +1,75 @@
+# huf-app-builder
+
+A Claude Code skill that helps you build apps on top of HUF.
+
+## What is this skill?
+
+It's a set of instructions for Claude Code (`SKILL.md` + some templates) that
+turns "I want to build an app on HUF" into a working scaffold. Instead of you
+figuring out the manifest format, the seed file layout, or the API auth
+headers from scratch, Claude asks a few questions, shows you a plan, and then
+writes the files.
+
+It doesn't run any magic — it just knows the HUF app patterns cold and
+follows them consistently.
+
+## What is a HUF app?
+
+HUF is an AI agent platform. A "HUF app" is any agent-powered app that plugs
+into it. There are two ways to build one:
+
+1. **Inside HUF** — you seed an Agent (with a prompt, knowledge, tools)
+   directly into a HUF/Frappe bench. It shows up as a tile in HUF and users
+   open it like any other app in the platform.
+2. **Outside HUF** — your own app (a website, a Slack bot, a script,
+   whatever) that talks to HUF over its REST API using an API key. HUF is
+   just a backend you call.
+
+## Who can use it
+
+Anyone using Claude Code against a HUF/Frappe workspace — internal
+developers building agent features, or anyone integrating an external
+service with HUF's API. You don't need to know the HUF app internals
+beforehand; the skill exists so you don't have to.
+
+## How to use it
+
+1. Install this skill into your Claude Code skills directory
+   (`~/.claude/skills/huf-app-builder/`).
+2. In Claude Code, say what you want to build, e.g. "build a HUF app that
+   summarizes support tickets."
+3. Claude will ask:
+   - What's the app for, and who uses it?
+   - Does it need its own UI, or is it agent-only?
+   - Does it need to be *launched from* HUF, or does it just need to
+     *call* HUF? (this decides inside vs. outside)
+4. Claude shows you a concrete plan — what gets created, which files, which
+   API scopes — and waits for your go-ahead.
+5. Claude scaffolds the files. For an inside-HUF app, it also checks the
+   files sync correctly. For an outside-HUF app, it never touches your
+   secret key — you copy that yourself from HUF's Developer Settings.
+
+## Examples
+
+**Inside HUF**
+
+- *Support ticket triage agent* — reads incoming tickets, tags them by
+  urgency/category, drafts a reply. Seeded as an Agent + Prompt + Knowledge
+  Source (your support docs), shows up as a tile in HUF.
+- *Meeting notes agent* — takes a transcript, produces action items and a
+  summary. Just an Agent + Prompt, no extra tools needed, launched from HUF.
+
+**Outside HUF**
+
+- *Slack bot* — a small external service that receives Slack messages,
+  calls a HUF agent over the REST API to generate a reply, and posts it
+  back. Uses an API key scoped to `agents:run` and `conversations:write`.
+
+## What it won't do for you
+
+- It won't run `bench new-app` — you create the Frappe app yourself, the
+  skill only adds the HUF seed files into it.
+- It won't create or reveal API keys — you mint those yourself in HUF's
+  Developer Settings UI.
+- It won't scaffold a Desk-page delivery — that path isn't supported by HUF
+  yet, so the skill will tell you that instead of pretending it works.

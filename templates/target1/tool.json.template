@@ -1,0 +1,15 @@
+{
+  "_comment": "Agent Tool Function seed file. Place at <myapp>/huf/tools/<tool_id>.json. Keyed on tool_name.",
+  "tool_name": "MY_TOOL_NAME",
+  "description": "Brief description of what this tool does.",
+  "types": "Custom Function",
+  "tool_type": "MY_TOOL_TYPE",
+  "parameters": [
+    {
+      "label": "Parameter Label",
+      "fieldname": "parameter_name",
+      "type": "string",
+      "required": 1
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "_comment": "Agent Trigger seed file. Place at <myapp>/huf/triggers/<trigger_id>.json. Keyed on trigger_name.",
+  "trigger_name": "MY_TRIGGER_NAME",
+  "description": "Description of when this trigger fires."
+}

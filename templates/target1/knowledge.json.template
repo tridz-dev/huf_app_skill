@@ -1,0 +1,7 @@
+{
+  "_comment": "Knowledge Source seed file. Place at <myapp>/huf/knowledge/<knowledge_id>.json. Keyed on source_name.",
+  "source_name": "MY_KNOWLEDGE_SOURCE",
+  "storage_mode": "Frappe File",
+  "knowledge_type": "sqlite_fts",
+  "description": "Description of the knowledge base content."
+}

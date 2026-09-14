@@ -1,0 +1,13 @@
+{
+  "_comment": "Agent seed file. Place at <myapp>/huf/agents/<agent_id>.json. Keyed on agent_name.",
+  "agent_name": "MY_AGENT_NAME",
+  "instructions": "You are a helpful assistant that...",
+  "tools": [
+    "Tool Name 1",
+    "Tool Name 2"
+  ],
+  "knowledge": [
+    "Knowledge Source Name 1"
+  ],
+  "is_system": false
+}

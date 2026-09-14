@@ -1,0 +1,6 @@
+{
+  "_comment": "Agent Prompt seed file. Place at <myapp>/huf/prompts/<prompt_id>.json. Keyed on title.",
+  "title": "MY_PROMPT_TITLE",
+  "prompt": "You are a <role> assistant. Your task is to...",
+  "category": "Research"
+}

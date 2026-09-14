@@ -1,0 +1,17 @@
+{
+  "_comment": "HUF App manifest. Place at <myapp>/huf/apps/<app_id>.json. Check app_id uniqueness via huf.ai.apps_api.get_huf_apps before use.",
+  "manifest_version": 1,
+  "app_id": "MY_APP_ID",
+  "title": "MY_APP_TITLE",
+  "route": "/MY_APP_ROUTE",
+  "description": "Short description of the app's purpose.",
+  "version": "1.0.0",
+  "icon": "lucide-icon-name",
+  "category": "Create",
+  "launch_mode": "route",
+  "required_huf_version": "1.0.0",
+  "permission_method": "myapp.permissions.can_use_app",
+  "sort_order": 100,
+  "enabled": true,
+  "exposed_tables": ["DocType Name 1", "DocType Name 2"]
+}
