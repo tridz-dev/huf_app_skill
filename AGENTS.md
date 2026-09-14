@@ -1,7 +1,16 @@
----
-name: huf-app-builder
-description: Use when the user wants to build a new app/agent on the HUF platform — either a HUF App seeded inside a Frappe bench (desk/portal delivery) or an external service that calls HUF over the /huf/api/v1/* REST API with a developer API key. Triggers on requests like "build a HUF app", "create an agent app for HUF", "scaffold a HUF integration", "make an app that talks to HUF API".
-compatibility: "Claude Code, Kimi Code (via --skills-dir). For Codex, Cursor, OpenCode, or any other agent, use AGENTS.md in this same repo instead — same content, no Claude-specific frontmatter."
+# HUF App Builder — Agent Instructions
+
+This file is read directly by AI coding agents (Codex, Cursor, OpenCode,
+Kimi, Claude Code, etc.) when working in this repo, or can be pasted as a
+system/task prompt into any of them. It's a plain set of instructions — no
+tool-specific syntax — so any agent that can read files, run shell commands,
+and write files can follow it.
+
+If you're setting this up as a **Claude Code skill** instead, use `SKILL.md`
+in this same repo (same content, with the YAML frontmatter Claude Code's
+skill loader expects). Everything else in this repo (`templates/`) is
+shared between both.
+
 ---
 
 # HUF App Builder Skill

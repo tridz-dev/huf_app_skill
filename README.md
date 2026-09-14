@@ -1,14 +1,27 @@
 # huf-app-builder
 
-A Claude Code skill that helps you build apps on top of HUF.
+An AI coding agent skill that helps you build apps on top of HUF. Works with
+Claude Code, Codex, Cursor, OpenCode, Kimi, or any agent CLI that can read a
+file, run shell commands, and write files — it's not tied to one tool.
 
 ## What is this skill?
 
-It's a set of instructions for Claude Code (`SKILL.md` + some templates) that
-turns "I want to build an app on HUF" into a working scaffold. Instead of you
-figuring out the manifest format, the seed file layout, or the API auth
-headers from scratch, Claude asks a few questions, shows you a plan, and then
-writes the files.
+It's a set of plain-language instructions (`AGENTS.md`, plus `SKILL.md` for
+Claude Code/Kimi's skill loader, plus some templates) that turns "I want to
+build an app on HUF" into a working scaffold. Instead of you figuring out the
+manifest format, the seed file layout, or the API auth headers from scratch,
+the agent asks a few questions, shows you a plan, and then writes the files.
+
+## Using it with your agent
+
+- **Claude Code / Kimi Code** — drop this repo into your skills directory
+  (`~/.claude/skills/huf-app-builder/`, or point `--skills-dir` at it for
+  Kimi). They read `SKILL.md` automatically.
+- **Codex / Cursor / OpenCode** — copy `AGENTS.md` (and the `templates/`
+  folder) into the project you're working in, or point the agent at this
+  repo. These tools read `AGENTS.md` at the project root automatically.
+- **Anything else** — paste the contents of `AGENTS.md` into the agent as a
+  task/system prompt, and keep `templates/` alongside the files it writes.
 
 It doesn't run any magic — it just knows the HUF app patterns cold and
 follows them consistently.
