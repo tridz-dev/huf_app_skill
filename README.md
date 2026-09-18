@@ -89,6 +89,14 @@ context/summarization strategy, reasoning control, prompt caching, memory,
 or code execution/SSH tools — and sets only the fields each one needs. Full
 index: [`templates/target1/AGENT_CONFIG_REFERENCE.md`](templates/target1/AGENT_CONFIG_REFERENCE.md).
 
+### Connecting to other apps (CRM, ERPNext, HR, ...)
+
+If the agent needs to read or write data in another installed app, the skill
+discovers the real installed apps and DocTypes on your site first (`bench
+list-apps`, then each DocType's live meta) instead of guessing field names
+from general ERPNext/CRM knowledge — schemas vary by version and
+customization.
+
 ## Examples
 
 **Inside HUF**

@@ -32,8 +32,16 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
    This answer changes how Step 2 drafts the prompt and the knowledge plan.
 5. **Knowledge sources** — If the agent needs grounding (FAQs, product docs, a wiki, past tickets, a schema, etc.), ask what the source material actually is: files the user has locally, URLs, existing Frappe DocTypes/Data Tables, or "none yet." Don't invent knowledge content — either the user supplies real source material to seed, or the app ships with no seeded knowledge and a note that the installer adds their own.
 6. **Capabilities (Target 1 only)** — Ask, as one bundled question, which of these the agent needs: **vision/document upload, image generation, voice (STT/TTS), custom context/summarization strategy, reasoning control, prompt caching, memory, or code execution/SSH tools.** Don't assume "just a chat prompt" — these are real, common Agent fields (see `templates/target1/AGENT_CONFIG_REFERENCE.md`), not add-ons. Skip any group the user doesn't need; every field in that reference defaults to off/unset if you never touch it.
+7. **Other installed apps (Target 1 only)** — Ask: **"Does this agent need to read or write data in another installed app — CRM, ERPNext, HR, etc.?"** If yes, run App & DocType Discovery (below) before planning tools, rather than guessing DocType/field names from general Frappe/ERPNext knowledge.
 
 If the user is working in a Frappe bench directory, suggest "This looks like you have a bench. Are you seeding this app inside it?" — but still ask; never assume.
+
+### App & DocType Discovery (only if Q7 = yes)
+
+1. **List installed apps** — `bench --site <site> list-apps` (or, no bench access: ask the user which apps are installed).
+2. **List an app's DocTypes** — Its modules: `bench --site <site> execute frappe.get_all --kwargs '{"doctype": "Module Def", "filters": {"app_name": "<app>"}, "pluck": "name"}'`; then its DocTypes: same call with `{"doctype": "DocType", "filters": {"module": ["in", [<those modules>]]}, "pluck": "name"}` (or `GET /api/method/frappe.client.get_list`). Ask the user which specific DocTypes matter (e.g. CRM → `CRM Lead`, `CRM Deal`; ERPNext → `Sales Invoice`, `Customer`, `Item`) rather than enumerating everything.
+3. **Get real field names** — Before seeding any tool referencing a DocType, check its meta (`GET /api/resource/DocType/<name>` or `frappe.get_meta("<name>")`) for actual fieldnames. Do not guess ERPNext/CRM field names from general knowledge — schemas vary by version and customization.
+4. **No live bench/site reachable** — Don't guess. Ask the user to name the exact app, DocType(s), and fields to target.
 
 ---
 
@@ -46,7 +54,7 @@ Present the plan explicitly and wait for go-ahead before executing.
 **DocTypes to seed:**
 - Agent — the main agent record
 - Agent Prompt — system prompt and conversation instructions
-- Agent Tool Function — any custom tools the agent needs
+- Agent Tool Function — any custom tools the agent needs, including one per DocType operation confirmed in App & DocType Discovery (real `reference_doctype`, a `types` value like `Get List`/`Create Document`/`Update Document`, and `required_permission`)
 - Knowledge Source — documents, FAQs, or data the agent will reference
 - Agent Trigger — optional; how the agent is invoked (manual, scheduled, webhook, etc.)
 
@@ -243,6 +251,7 @@ Do not recommend blind. Instead:
 - **Do not assume bench access.** The app may be seeded outside a bench (e.g., user clones the app repo to a different machine). Provide graceful degradation: "If you have a bench, run [command]. Otherwise, here are the files; copy them to your bench and run migrate yourself."
 - **Target 2 client code must never contain a literal key.** Every code example must use `$HUF_API_KEY` or `process.env.HUF_API_KEY` or the language equivalent. Do not provide a curl snippet like `curl -H "X-Huf-Api-Key: sk-..." ...`. Use `curl -H "X-Huf-Api-Key: $HUF_API_KEY" ...` instead.
 - **Do not seed fabricated knowledge content.** A Knowledge Source seed file must come from real material the user supplied (a file, URL, or DocType/Data Table). If they have none yet, ship without a knowledge seed rather than inventing plausible-sounding facts.
+- **Do not guess another app's DocType or field names.** For a tool that reads/writes CRM, ERPNext, HR, etc., confirm the real DocType and field names via App & DocType Discovery (its live meta) before seeding — schemas vary by version/customization, and "well-known" ERPNext field names are not a substitute for checking the actual site.
 - **If audience = shipping to others, do not seed the builder's private material.** No personal/internal docs, credentials, org-specific references, or site-specific data in an app meant to be installed on someone else's site. The system prompt must read as generic install instructions, not "you, the builder."
 
 ---

@@ -59,6 +59,18 @@ excluded — out of scope for this skill.
 | | `disabled` | Check | 0 | Kill switch |
 | | `autonaming_of_conversation_title` | Check | 1 | Auto-title new conversations |
 
+## DocType-connected tools (Agent Tool Function)
+
+Source: `agent_tool_function.json`. For a tool that reads/writes a DocType found via App &
+DocType Discovery, set:
+
+| Field | Type | Notes |
+|---|---|---|
+| `types` | Select | DocType operation, e.g. `Get Document` / `Get Multiple Documents` / `Get List` / `Create Document` / `Create Multiple Documents` / `Update Document` / `Update Multiple Documents` / `Delete Document` / `Delete Multiple Documents` / `Submit Document` / `Cancel Document` / `Get Amended Document` / `Get Value` / `Set Value` (also non-DocType types exist: `Custom Function`, `GET`/`POST`, `Code Execution`, memory ops, etc. — use those only when not targeting a DocType) |
+| `reference_doctype` | Link (DocType) | The real DocType name confirmed via discovery |
+| `required_permission` | Select | `read` / `write` / `create` / `delete` / `submit` / `cancel` — match to the `types` operation |
+| `is_read_only` / `allowed_for_guest` | Check | Optional restrictions |
+
 ## How to use this in a plan
 
 1. In Step 1 (Discover), ask which capability groups above the agent actually needs —

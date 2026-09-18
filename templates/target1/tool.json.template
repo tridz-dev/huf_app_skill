@@ -1,5 +1,5 @@
 {
-  "_comment": "Agent Tool Function seed file. Place at <myapp>/huf/tools/<tool_id>.json. Keyed on tool_name.",
+  "_comment": "Agent Tool Function seed file. Place at <myapp>/huf/tools/<tool_id>.json. Keyed on tool_name. For a tool that reads/writes another DocType (e.g. from App & DocType Discovery), set \"types\" to a DocType operation (Get Document/Get List/Create Document/Update Document/Delete Document/etc.), set \"reference_doctype\" to the real DocType name, and \"required_permission\" to read/write/create/delete as appropriate — omit \"parameters\" for those, they're driven by the DocType's own fields.",
   "tool_name": "MY_TOOL_NAME",
   "description": "Brief description of what this tool does.",
   "types": "Custom Function",
