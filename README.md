@@ -56,11 +56,30 @@ beforehand; the skill exists so you don't have to.
    - Does it need its own UI, or is it agent-only?
    - Does it need to be *launched from* HUF, or does it just need to
      *call* HUF? (this decides inside vs. outside)
+   - Is this for your own use, or are you shipping it as an app for other
+     people to install? (this changes how the prompt and knowledge get
+     written — see below)
+   - What real material (files, URLs, existing docs) should the agent be
+     grounded in, if any?
 4. Claude shows you a concrete plan — what gets created, which files, which
-   API scopes — and waits for your go-ahead.
-5. Claude scaffolds the files. For an inside-HUF app, it also checks the
-   files sync correctly. For an outside-HUF app, it never touches your
-   secret key — you copy that yourself from HUF's Developer Settings.
+   API scopes, and a draft of the actual system prompt — and waits for your
+   go-ahead.
+5. Claude scaffolds the files with real content: the finished system prompt,
+   and knowledge sources seeded from the material you actually gave it (or
+   no knowledge seed at all if you said you'd add your own later — it won't
+   make up knowledge content). For an inside-HUF app, it also checks the files sync
+   correctly. For an outside-HUF app, it never touches your secret key — you
+   copy that yourself from HUF's Developer Settings.
+
+### Personal vs. shipped apps
+
+If you say the app is **for yourself**, the prompt and knowledge can
+reference your own team, tools, and data directly.
+
+If you say you're **shipping it to others**, the skill writes the prompt as
+generic install instructions (not "you, the builder") and refuses to seed
+your own private docs or credentials into it — an app meant for someone
+else's site should only ship with material that's safe to hand them.
 
 ## Examples
 

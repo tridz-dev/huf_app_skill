@@ -26,6 +26,11 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
 3. **Launch model** — This is the fork question: **"Does this app need to be *launched from* HUF, or does it just need to *call* HUF?"**
    - *Launched from HUF* → seeded inside the bench, appears as a tile or page in HUF, Agent runs inside HUF (Target 1)
    - *Calls HUF* → external service, runs somewhere else, calls HUF's API as a client (Target 2)
+4. **Audience** — **"Is this for your own use (personal/internal), or are you building it to ship as an app for other people to install?"**
+   - *Personal/internal* → single tenant, one team/site. The system prompt and knowledge sources can be specific and even reference this user's own data, docs, or workflow. No need to generalize.
+   - *Shipping to others* → the app will be installed on sites you don't control. The system prompt must read as instructions for a generic install, not "you, the builder." Knowledge sources must be either generic reference material the user actually supplies (and confirms is safe to distribute), or no seeded knowledge at all, with instructions for each installer to add their own — never the builder's own private docs, credentials, or site-specific data, and never generic-sounding content you wrote yourself.
+   This answer changes how Step 2 drafts the prompt and the knowledge plan.
+5. **Knowledge sources** — If the agent needs grounding (FAQs, product docs, a wiki, past tickets, a schema, etc.), ask what the source material actually is: files the user has locally, URLs, existing Frappe DocTypes/Data Tables, or "none yet." Don't invent knowledge content — either the user supplies real source material to seed, or the app ships with no seeded knowledge and a note that the installer adds their own.
 
 If the user is working in a Frappe bench directory, suggest "This looks like you have a bench. Are you seeding this app inside it?" — but still ask; never assume.
 
@@ -49,9 +54,13 @@ Present the plan explicitly and wait for go-ahead before executing.
 - Present a pick-list of what's actually configured on their instance, rather than blind recommendations.
 - Do not assume or hardcode defaults that may not exist.
 
-**System prompt & knowledge sources:**
-- Draft a high-level system prompt based on the app's purpose (will be refined by the user).
-- Note what knowledge sources the agent should have access to.
+**System prompt & knowledge sources — draft the real content, not an outline:**
+- Write the actual system prompt text (Agent + Agent Prompt content) the seed file will ship with — full instructions, tone, constraints, what the agent should and shouldn't do — based on Step 1's answers. The user refines it, but hand them a finished draft, not a placeholder like "add your instructions here."
+- Wording depends on the audience answer from Step 1:
+  - *Personal/internal* → can reference the user's own team, tools, or workflow by name.
+  - *Shipping to others* → must read as generic install instructions ("you are an assistant for this workspace's support tickets"), no references to the builder's own org, people, or private systems.
+- For knowledge sources: if the user supplied real source material (files/URLs/DocTypes) in Step 1, plan exactly which Knowledge Source records to seed and what each should point at or contain. If they said "none yet," plan the app with no knowledge seed file at all and a clear note for whoever installs it to add their own — do not fabricate placeholder facts as if they were real knowledge content.
+- *Shipping to others*: only seed knowledge content that is safe to distribute (generic docs, public reference material, or nothing). Never seed the builder's private/internal documents into an app meant to be installed elsewhere.
 
 **Delivery method — pick one:**
 - **SPA deep-link tile (default, recommended)** — The app appears as a tile in HUF's dashboard; clicking it opens the agent in a chat interface. Works today. No gaps.
@@ -128,6 +137,18 @@ Before writing any files:
 
    Reference the app-pattern.md checklist and the templates in `templates/target1/` for the structure of each file.
 
+3. **Populate with real content, not placeholders** — the templates give you the field shape; fill
+   them with the content drafted and approved in Step 2:
+   - `prompts/<prompt_id>.json` gets the actual, finished system prompt text from Step 2 — not
+     `"TODO: add instructions"`.
+   - `knowledge/<knowledge_id>.json` gets seeded only from real source material the user provided
+     (a file, URL, or DocType/Data Table reference confirmed in Step 1). If the user said "none
+     yet," skip creating a knowledge seed file rather than inventing one with fabricated content,
+     and say so explicitly in the hand-off summary (Step 4).
+   - If audience = *shipping to others*, re-check every knowledge source and prompt reference for
+     anything that identifies the builder's own org, private docs, or credentials before writing
+     the file — that content must not ship inside an installable app.
+
 ### Sync with HUF
 
 1. **Run sync** — Execute `bench --site <site> execute huf.ai.app_seeding.apps_loader.sync_huf_apps` (or point the user to `POST /api/method/huf.ai.apps_api.sync_huf_apps` if no bench is reachable).
@@ -178,6 +199,7 @@ Before writing any files:
 3. **Summarize what was created**:
    - App ID and delivery method
    - List of seeded DocTypes and their IDs
+   - Whether knowledge was seeded (and from what source), or left empty for the installer to add
    - Where the seed files are located
    - Link to the app in the HUF dashboard (if SPA tile) or portal/desk (if those methods)
 
@@ -217,6 +239,8 @@ Do not recommend blind. Instead:
 - **Do not write API keys or secrets to disk** after creation. Never echo back a key in the transcript, logs, or client code. The user generates the key in Developer Settings; the skill references it via `$HUF_API_KEY` environment variable only.
 - **Do not assume bench access.** The app may be seeded outside a bench (e.g., user clones the app repo to a different machine). Provide graceful degradation: "If you have a bench, run [command]. Otherwise, here are the files; copy them to your bench and run migrate yourself."
 - **Target 2 client code must never contain a literal key.** Every code example must use `$HUF_API_KEY` or `process.env.HUF_API_KEY` or the language equivalent. Do not provide a curl snippet like `curl -H "X-Huf-Api-Key: sk-..." ...`. Use `curl -H "X-Huf-Api-Key: $HUF_API_KEY" ...` instead.
+- **Do not seed fabricated knowledge content.** A Knowledge Source seed file must come from real material the user supplied (a file, URL, or DocType/Data Table). If they have none yet, ship without a knowledge seed rather than inventing plausible-sounding facts.
+- **If audience = shipping to others, do not seed the builder's private material.** No personal/internal docs, credentials, org-specific references, or site-specific data in an app meant to be installed on someone else's site. The system prompt must read as generic install instructions, not "you, the builder."
 
 ---
 
