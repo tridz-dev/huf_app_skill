@@ -40,6 +40,7 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
    - *Shipping to others* → the app will be installed on sites you don't control. The system prompt must read as instructions for a generic install, not "you, the builder." Knowledge sources must be either generic reference material the user actually supplies (and confirms is safe to distribute), or no seeded knowledge at all, with instructions for each installer to add their own — never the builder's own private docs, credentials, or site-specific data, and never generic-sounding content you wrote yourself.
    This answer changes how Step 2 drafts the prompt and the knowledge plan.
 5. **Knowledge sources** — If the agent needs grounding (FAQs, product docs, a wiki, past tickets, a schema, etc.), ask what the source material actually is: files the user has locally, URLs, existing Frappe DocTypes/Data Tables, or "none yet." Don't invent knowledge content — either the user supplies real source material to seed, or the app ships with no seeded knowledge and a note that the installer adds their own.
+6. **Capabilities (Target 1 only)** — Ask, as one bundled question, which of these the agent needs: **vision/document upload, image generation, voice (STT/TTS), custom context/summarization strategy, reasoning control, prompt caching, memory, or code execution/SSH tools.** Don't assume "just a chat prompt" — these are real, common Agent fields (see `templates/target1/AGENT_CONFIG_REFERENCE.md`), not add-ons. Skip any group the user doesn't need; every field in that reference defaults to off/unset if you never touch it.
 
 If the user is working in a Frappe bench directory, suggest "This looks like you have a bench. Are you seeding this app inside it?" — but still ask; never assume.
 
@@ -57,6 +58,8 @@ Present the plan explicitly and wait for go-ahead before executing.
 - Agent Tool Function — any custom tools the agent needs
 - Knowledge Source — documents, FAQs, or data the agent will reference
 - Agent Trigger — optional; how the agent is invoked (manual, scheduled, webhook, etc.)
+
+**Agent capabilities:** List only the non-default fields Step 1's capability answer requires (e.g. `stt_model`+`tts_model` for voice, `image_generation_model` for image gen, `enable_memory`+`memory_policy` for memory). Look them up in `templates/target1/AGENT_CONFIG_REFERENCE.md` — a single indexed table of every relevant `Agent` field, grouped by capability, with type/default/purpose. Do not set fields the plan doesn't call for.
 
 **Model & Provider selection:**
 - Call the live endpoints to list available AI Providers and AI Models from the user's site (see Model & Provider Suggestion section below).
@@ -138,7 +141,7 @@ Before writing any files:
 
 2. **Seed JSON files** — Create one JSON file per seeded DocType under the seed directory
    (`apps/<myapp>/<myapp>/huf/`), in these flat subdirectories:
-   - `agents/<agent_id>.json` — Agent record (`templates/target1/agent.json.template`)
+   - `agents/<agent_id>.json` — Agent record (`templates/target1/agent.json.template`, plus any capability fields planned in Step 2 — see `templates/target1/AGENT_CONFIG_REFERENCE.md`)
    - `prompts/<prompt_id>.json` — Agent Prompt record (`templates/target1/prompt.json.template`)
    - `tools/<tool_id>.json` — Tool definitions, if any (`templates/target1/tool.json.template`)
    - `knowledge/<knowledge_id>.json` — Knowledge sources, if any (`templates/target1/knowledge.json.template`)
@@ -259,6 +262,7 @@ Starting-point JSON schemas and code templates are located in this skill's `temp
 
 - **templates/target1/** — JSON templates for the app manifest and seeded DocTypes
   - `README.md` — seed directory layout, sync commands, placeholder conventions
+  - `AGENT_CONFIG_REFERENCE.md` — indexed table of every capability-relevant `Agent` field (vision, image gen, STT/TTS, context/summarization, reasoning, caching, memory, permissions, etc.)
   - `manifest.json.template` — HUF App manifest
   - `agent.json.template` — Agent record
   - `prompt.json.template` — Agent Prompt record

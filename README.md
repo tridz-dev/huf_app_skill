@@ -81,6 +81,14 @@ generic install instructions (not "you, the builder") and refuses to seed
 your own private docs or credentials into it — an app meant for someone
 else's site should only ship with material that's safe to hand them.
 
+### Beyond chat: vision, voice, memory, and more
+
+An Agent isn't just a prompt. The skill also asks whether yours needs
+document/vision upload, OCR, image generation, voice (STT/TTS), a custom
+context/summarization strategy, reasoning control, prompt caching, memory,
+or code execution/SSH tools — and sets only the fields each one needs. Full
+index: [`templates/target1/AGENT_CONFIG_REFERENCE.md`](templates/target1/AGENT_CONFIG_REFERENCE.md).
+
 ## Examples
 
 **Inside HUF**
