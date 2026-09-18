@@ -47,8 +47,10 @@ curl -X POST "$SITE/api/method/huf.ai.apps_api.sync_huf_apps" \
 
 Then inspect the `sync_status` and `sync_error` fields on the `HUF App` record to verify success.
 
-## Reference
+## Further reading
 
-- **manifest.md**: App launcher manifest fields and validation rules.
-- **app-pattern.md**: Provider app layout, load order, and lifecycle.
-- **seeding-and-hooks.md**: Seed file structure and hook descriptors for skills and tools.
+The templates here (and `AGENT_CONFIG_REFERENCE.md` next to this file) are self-contained for
+scaffolding. For deeper platform background, the HUF repo itself documents this in
+`doc/features/apps/manifest.md`, `doc/features/apps/app-pattern.md`, and
+`doc/features/apps/seeding-and-hooks.md` — this skill repo doesn't vendor copies, so only follow
+these if you have that repo checked out alongside the site you're seeding into.

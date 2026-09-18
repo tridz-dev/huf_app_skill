@@ -1,0 +1,32 @@
+name: skill guard
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No absolute /Users/ paths
+        run: |
+          if grep -rn "/Users/" --include="*.md" .; then
+            echo "::error::Found a hardcoded /Users/ path — this repo is public, remove it."
+            exit 1
+          fi
+      - name: AGENTS.md stays a thin pointer, not a duplicated body
+        run: |
+          lines=$(wc -l < AGENTS.md)
+          if [ "$lines" -gt 40 ]; then
+            echo "::error::AGENTS.md is $lines lines — it should be a short pointer to SKILL.md, not a copy of its body. If SKILL.md changed, update AGENTS.md's pointer text only, don't re-paste the body."
+            exit 1
+          fi
+      - name: Every templates/... path cited in SKILL.md exists
+        run: |
+          missing=0
+          for path in $(grep -oE 'templates/[A-Za-z0-9_./-]+' SKILL.md | sort -u); do
+            if [ ! -e "$path" ]; then
+              echo "::error::SKILL.md references '$path' which doesn't exist in the repo."
+              missing=1
+            fi
+          done
+          exit $missing

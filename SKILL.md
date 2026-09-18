@@ -1,7 +1,6 @@
 ---
 name: huf-app-builder
 description: Use when the user wants to build a new app/agent on the HUF platform — either a HUF App seeded inside a Frappe bench (desk/portal delivery) or an external service that calls HUF over the /huf/api/v1/* REST API with a developer API key. Triggers on requests like "build a HUF app", "create an agent app for HUF", "scaffold a HUF integration", "make an app that talks to HUF API".
-compatibility: "Claude Code, Kimi Code (via --skills-dir). For Codex, Cursor, OpenCode, or any other agent, use AGENTS.md in this same repo instead — same content, no Claude-specific frontmatter."
 ---
 
 # HUF App Builder Skill
@@ -81,14 +80,11 @@ Present the plan explicitly and wait for go-ahead before executing.
 - **Desk page** — NOT currently supported. The page.js pattern does not exist. Do not offer this without flagging it as unsupported.
 
 If the user chooses **Portal page** or **Desk page**, this skill's HUF-specific plan only decides
-*that* delivery — it does not teach the Frappe implementation. Load the matching subset of
-`/Users/safwan/Code/Huf/workspace/doc/reference/frappe-framework/` (a tagged, categorized Frappe
-framework reference; see its README for the full index) before writing any Frappe code:
-- Portal page → `portal/*.md` (start with `overview.md` + `context.md`), plus
-  `server-api/server-calls.md` and `server-api/jinja.md`.
-- Desk page (once actually implemented — currently unsupported, see above) → `desk/page-api.md` +
-  `desk/vue-inside-desk-page.md` + `assets/asset-bundling.md` + `server-api/server-calls.md`.
-Load only the files relevant to the chosen path — not the whole reference directory.
+*that* delivery — it does not teach the Frappe implementation. Before writing any Frappe code for
+that path (portal page templates and routing, or the desk `page.js` pattern once it exists), ask the
+user whether their project has its own Frappe framework reference docs to load; this skill does not
+ship one. If not, work from the official Frappe framework documentation instead of guessing at
+portal/desk API shapes.
 
 **Show the plan and get explicit go-ahead before proceeding to Step 3.**
 
@@ -136,7 +132,7 @@ Before writing any files:
    `templates/target1/manifest.json.template` (fields: `manifest_version`, `app_id`, `title`,
    `route`, `description`, `version`, `icon`, `category`, `launch_mode`,
    `required_huf_version`, `permission_method`, `sort_order`, `enabled`, `exposed_tables`).
-   Do not invent manifest fields; see `manifest.md` for the authoritative field list.
+   Do not invent manifest fields beyond the ones listed above and in `templates/target1/manifest.json.template`.
 
 2. **Seed JSON files** — Create one JSON file per seeded DocType under the seed directory
    (`apps/<myapp>/<myapp>/huf/`), in these flat subdirectories:
@@ -146,7 +142,7 @@ Before writing any files:
    - `knowledge/<knowledge_id>.json` — Knowledge sources, if any (`templates/target1/knowledge.json.template`)
    - `triggers/<trigger_id>.json` — Triggers, if any (`templates/target1/trigger.json.template`)
 
-   Reference the app-pattern.md checklist and the templates in `templates/target1/` for the structure of each file.
+   Use the templates in `templates/target1/` for the exact structure of each file.
 
 3. **Populate with real content, not placeholders** — the templates give you the field shape; fill
    them with the content drafted and approved in Step 2:

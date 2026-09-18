@@ -6,22 +6,37 @@ file, run shell commands, and write files — it's not tied to one tool.
 
 ## What is this skill?
 
-It's a set of plain-language instructions (`AGENTS.md`, plus `SKILL.md` for
-Claude Code/Kimi's skill loader, plus some templates) that turns "I want to
-build an app on HUF" into a working scaffold. Instead of you figuring out the
-manifest format, the seed file layout, or the API auth headers from scratch,
-the agent asks a few questions, shows you a plan, and then writes the files.
+It's a set of plain-language instructions (`SKILL.md`, plus some templates)
+that turns "I want to build an app on HUF" into a working scaffold. Instead
+of you figuring out the manifest format, the seed file layout, or the API
+auth headers from scratch, the agent asks a few questions, shows you a plan,
+and then writes the files.
 
 ## Using it with your agent
 
-- **Claude Code / Kimi Code** — drop this repo into your skills directory
-  (`~/.claude/skills/huf-app-builder/`, or point `--skills-dir` at it for
-  Kimi). They read `SKILL.md` automatically.
-- **Codex / Cursor / OpenCode** — copy `AGENTS.md` (and the `templates/`
-  folder) into the project you're working in, or point the agent at this
-  repo. These tools read `AGENTS.md` at the project root automatically.
-- **Anything else** — paste the contents of `AGENTS.md` into the agent as a
-  task/system prompt, and keep `templates/` alongside the files it writes.
+Claude Code, Codex CLI, Cursor, and Kimi Code all natively load skills the
+same way: a directory containing `SKILL.md` with YAML frontmatter, placed in
+that tool's skills root. OpenCode also auto-scans some of those same roots.
+
+Run `./install.sh` from this directory — it symlinks this repo into every
+skills root it finds on your machine (skipping any tool you don't have
+installed):
+
+```bash
+./install.sh
+```
+
+| Harness | Skills root |
+|---|---|
+| Claude Code | `~/.claude/skills/` (or `.claude/skills/` in a project) |
+| Codex CLI | `~/.codex/skills/` (or `~/.agents/skills/`) |
+| Cursor | `~/.cursor/skills/` (or `.cursor/skills/` in a project) |
+| Kimi Code | `~/.kimi-code/skills/`, or `extra_skill_dirs` in `config.toml` |
+| OpenCode | auto-scans `~/.claude/skills/` and `~/.agents/skills/`; also `.opencode/skills/` or `skills.paths` in `opencode.json` |
+
+No native skill loader for your tool? Copy the whole directory (not just
+`SKILL.md` — it needs `templates/` alongside it) into your project and point
+the agent at `SKILL.md`, or paste its contents in as a prompt.
 
 It doesn't run any magic — it just knows the HUF app patterns cold and
 follows them consistently.
@@ -40,18 +55,17 @@ into it. There are two ways to build one:
 
 ## Who can use it
 
-Anyone using Claude Code against a HUF/Frappe workspace — internal
+Anyone using an AI coding agent against a HUF/Frappe workspace — internal
 developers building agent features, or anyone integrating an external
 service with HUF's API. You don't need to know the HUF app internals
 beforehand; the skill exists so you don't have to.
 
 ## How to use it
 
-1. Install this skill into your Claude Code skills directory
-   (`~/.claude/skills/huf-app-builder/`).
-2. In Claude Code, say what you want to build, e.g. "build a HUF app that
+1. Install it (`./install.sh`, or see the table above).
+2. Tell your agent what you want to build, e.g. "build a HUF app that
    summarizes support tickets."
-3. Claude will ask:
+3. It will ask:
    - What's the app for, and who uses it?
    - Does it need its own UI, or is it agent-only?
    - Does it need to be *launched from* HUF, or does it just need to
@@ -61,10 +75,10 @@ beforehand; the skill exists so you don't have to.
      written — see below)
    - What real material (files, URLs, existing docs) should the agent be
      grounded in, if any?
-4. Claude shows you a concrete plan — what gets created, which files, which
+4. It shows you a concrete plan — what gets created, which files, which
    API scopes, and a draft of the actual system prompt — and waits for your
    go-ahead.
-5. Claude scaffolds the files with real content: the finished system prompt,
+5. It scaffolds the files with real content: the finished system prompt,
    and knowledge sources seeded from the material you actually gave it (or
    no knowledge seed at all if you said you'd add your own later — it won't
    make up knowledge content). For an inside-HUF app, it also checks the files sync
