@@ -1,36 +1,28 @@
 #!/bin/bash
 
-# HUF Platform REST API Usage Examples
-# Load HUF_API_KEY from .env before running these examples
+# HUF Platform REST API Usage Examples (see references/api-v1.md)
+# HUF_API_KEY must be set in your environment (never hard-code a key).
+# Replace the base URL with your Huf site.
+BASE="${HUF_BASE:-http://localhost:8104}"
 
-# Example 1: Check router reachability (no auth required)
-curl -s -X GET "http://localhost:8104/huf/api/v1/ping"
+# Example 1: Router reachability (no auth; does NOT validate the key)
+curl -s "$BASE/huf/api/v1/ping"
 
-# Example 2: Authenticate and retrieve granted scopes
-# This validates the API key and returns the list of scopes your key can access
-curl -s -X GET "http://localhost:8104/huf/api/v1/me" \
-  -H "X-Huf-Api-Key: $HUF_API_KEY"
+# Example 2: Validate the key; returns the owner's identity and capabilities
+curl -s "$BASE/huf/api/v1/me" -H "X-Huf-Api-Key: $HUF_API_KEY"
 
-# Example 3: List available agents
-curl -s -X POST "http://localhost:8104/huf/api/v1/agents" \
-  -H "X-Huf-Api-Key: $HUF_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{}'
+# Example 3: List agents (scope agents:read)
+curl -s "$BASE/huf/api/v1/agents?limit=20" -H "X-Huf-Api-Key: $HUF_API_KEY"
 
-# Example 4: Create a new conversation
-curl -s -X POST "http://localhost:8104/huf/api/v1/conversations" \
-  -H "X-Huf-Api-Key: $HUF_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"agent":"AUD-Guest"}'
+# Example 4: Create a conversation (scope conversations:write)
+curl -s -X POST "$BASE/huf/api/v1/conversations" \
+  -H "X-Huf-Api-Key: $HUF_API_KEY" -H "Content-Type: application/json" \
+  -d '{"agent_id":"<agent_id>"}'
 
-# Example 5: Send a message to a conversation
-curl -s -X POST "http://localhost:8104/huf/api/v1/responses" \
-  -H "X-Huf-Api-Key: $HUF_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"conversation_id":"<conversation_id>","message":"hello world"}'
+# Example 5: Run an agent turn (scope agents:run). Queue-first: returns response_id.
+curl -s -X POST "$BASE/huf/api/v1/responses" \
+  -H "X-Huf-Api-Key: $HUF_API_KEY" -H "Content-Type: application/json" \
+  -d '{"agent_id":"<agent_id>","conversation_id":"<conversation_id>","input":"hello world"}'
 
-# Example 6: Poll run status
-curl -s -X POST "http://localhost:8104/huf/api/v1/runs" \
-  -H "X-Huf-Api-Key: $HUF_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"run_id":"<run_id>"}'
+# Example 6: Poll the run (scope conversations:read)
+curl -s "$BASE/huf/api/v1/runs/<response_id>" -H "X-Huf-Api-Key: $HUF_API_KEY"
