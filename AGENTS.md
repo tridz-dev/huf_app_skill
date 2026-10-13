@@ -8,7 +8,7 @@ API with a developer key.
 canonical, full instruction set (Discover → Plan → Execute → Verify), kept
 here as one file so it never drifts out of sync with a second copy.
 
-`templates/` sits alongside both files — keep it there. If you were handed
+`templates/` and `references/` sit alongside both files — keep it there. If you were handed
 only this file's text with no `templates/` directory next to it (e.g. pasted
 as a prompt rather than read from disk), say so and ask for the repo rather
 than inventing the JSON shapes it would otherwise point you to.
