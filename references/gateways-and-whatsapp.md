@@ -119,13 +119,15 @@ If bridge mode is used, block the unsigned `frappe_whatsapp` webhook (`/api/meth
 
 These are set by the installer/admin, default off, and are stripped if an LLM passes them as tool arguments. An app must not seed them on; list them in the hand-off as opt-in.
 
+The flags are read from the first active WhatsApp Integration Settings row, not per Gateway. With several WhatsApp Gateways, treat them as site-wide: one setting applies to all of them.
+
 ### Agent tool actions  **[pending: tridz-dev/huf PR #806]**
 
 One consolidated WhatsApp tool with an `action` parameter: `send_message`, `send_media`, `send_template`, `list_messages`, `get_account_info`, `list_templates`, `create_template`, `get_template_status`. Credentials are never tool parameters. Check which actions exist on the target site before writing prompts that call them.
 
 ### Management API  **[pending: tridz-dev/huf PR #806]**
 
-Python/whitelisted methods under `huf.ai.whatsapp_management`: `get_setup_status`, `list_templates`, `get_template`, `create_template`, `edit_template`, `delete_template`, `sync_templates`, `create_template_draft`, `list_template_drafts`, `approve_template_draft`, `reject_template_draft`, `send_template_message`, `send_text_message`, `send_media_message`, `list_messages`, `list_conversations`. Mutating calls are POST and permission-gated; the account is always derived from the Gateway. Realtime event: `whatsapp_template_status`.
+Python/whitelisted methods under `huf.ai.whatsapp_management`: `get_setup_status`, `list_templates`, `get_template`, `create_template`, `edit_template`, `delete_template`, `sync_templates`, `create_template_draft`, `list_template_drafts`, `approve_template_draft`, `reject_template_draft`, `send_template_message`, `send_text_message`, `send_media_message`, `list_messages`, `list_conversations`, `list_message_log`, `list_message_log_filters`, `can_launch_whatsapp_app` (the latter three also **[pending: tridz-dev/huf PR #806]**). Mutating calls are POST and permission-gated; the account is always derived from the Gateway. Realtime event: `whatsapp_template_status`.
 
 ### Multiple gateways  **[pending: tridz-dev/huf PR #806]**
 
@@ -134,6 +136,10 @@ Python/whitelisted methods under `huf.ai.whatsapp_management`: `get_setup_status
 - Several numbers under one Meta app: use Meta's per-number or per-WABA callback override so each number posts to its own Gateway URL (check Meta's current docs for the request body).
 - Templates, windows and conversations are scoped per gateway and contact.
 
+### First-party "Manage WhatsApp" app tile  **[pending: tridz-dev/huf PR #806]**
+
+Seeded as a first-party app record with a permission method that shows the tile only when an enabled WhatsApp Gateway exists.
+
 ### Not supported
 
 - Inbox, assignment, shared conversations, CRM features (use a CRM app).
@@ -141,7 +147,6 @@ Python/whitelisted methods under `huf.ai.whatsapp_management`: `get_setup_status
 - Authentication templates and video headers.
 - Outbound media except by public link.
 - Routing by `phone_number_id` with a shared app credential **[planned]**.
-- First-party "Manage WhatsApp" app tile gated on an enabled WhatsApp Gateway **[planned]**.
 - Live inbound verification was not complete when this was written; treat inbound as unconfirmed on the bridge branch until the target site is tested.
 
 ## 6. Decision questions to ask the user (Step 1)

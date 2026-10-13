@@ -42,7 +42,7 @@ Facts below were read from code and docs, not all executed. Re-verify against th
 - **External**:
 ```bash
 curl -s -H "X-Huf-Api-Key: $HUF_API_KEY" -H "Content-Type: application/json" \
-  -d '{"agent":"my_agent","input":"hello"}' "$HUF_URL/huf/api/v1/responses"
+  -d '{"agent_id":"my_agent","input":"hello"}' "$HUF_URL/huf/api/v1/responses"
 # -> {"data":{"response_id":"..","conversation_id":"..","status":"queued","output":null},"request_id":..}
 curl -s -H "X-Huf-Api-Key: $HUF_API_KEY" "$HUF_URL/huf/api/v1/runs/<response_id>"   # poll
 ```
@@ -129,7 +129,7 @@ huf_tools = [{"tool_name": "myapp_sync_project", "function_path": "myapp.tools.s
 
 - **What**: human-in-the-loop primitives. The built-in `ask_user` tool pauses a run for user input. Execution approval (`approve_execution`, `reject_execution`) gates tool calls and sandboxed code. Flows have approve/reject steps.
 - **In-bench**: whitelisted approve/reject methods, gated by `execution.approve` and similar capabilities. **[available]**
-- **External**: owner decision: keys MAY approve through an `approvals:decide` scope, with `approvals:read` to list pending items. **[planned]**
+- **External**: Planned: keys MAY approve through an `approvals:decide` scope, with `approvals:read` to list pending items. **[planned]**
   - Expected shape: `GET /approvals`, `POST /approvals/{id}/approve|reject`.
   - Not grantable by default; prefer allow-listing specific agents. Mint-time check should require the creator to hold the backing capability.
 - **Gotchas**: until it ships, an external app cannot resume a paused run; surface the pause to a human in HUF.
@@ -194,7 +194,7 @@ Template: `templates/target1/manifest.json.template`. Allowed fields: `manifest_
 | Method | Status | Notes |
 |---|---|---|
 | SPA tile (route-launched) | **[available]** | default and recommended |
-| Portal page | **[available]** with gaps | no per-app `www/` template registry; guest access (`alias`, `is_public`, `agent`) may need manual System Manager edits |
+| Portal page | **[available]** with gaps | no per-app `www/` template registry. The manifest accepts `alias`, `is_public`, `agent`, `www_template` and `delivery`, but per-app `www/` template registration still needs manual setup |
 | Desk page | unsupported | the page.js pattern does not exist; do not offer |
 
 ## 6. Install-time seeding order

@@ -73,7 +73,7 @@ Parameters may be sent as query string or JSON body. Do not rely on HTTP method 
 
 ### Running an agent
 
-`POST /responses` is **queue-first**: it normally returns `status: "queued"` with `output: null`. `response_id` is the run id; poll `GET /runs/{response_id}` until `completed` or `failed`, then read `output`. Without `conversation_id` a new conversation is created and its id returned; with one, you must own it. Note: the field is `input` (the client stub's old `message` is wrong).
+`POST /responses` is **queue-first**: it normally returns `status: "queued"` with `output: null`. `response_id` is the run id; poll `GET /runs/{response_id}` until `completed` or `failed`, then read `output`. Without `conversation_id` a new conversation is created and its id returned; with one, you must own it.
 
 ### Streaming
 
@@ -122,7 +122,7 @@ Everything below is **[planned]** (from the platform plan; subject to change). D
 
 - **[planned] Generic gateway routes** `/gateways/{id}/...` (not per-provider routes like `/whatsapp/*`), driven by adapter capabilities: gateway list/get with capability flags, threads, messages (list/send), templates (only where the adapter supports templates; otherwise `capability_not_supported`). Typed errors such as `window_closed` for provider service windows.
 - **[planned] New scopes**: `runs:read` (split from `conversations:read`), `gateways:read`, `gateways:send`, `gateways:templates:write`, `gateways:access`, `gateways:write`, `tables:read/write/schema`, `skills:read`, `knowledge:read/write`, `flows:read/run`, `decisions:read/run`, `memory:read/write`, `automations:*`, `artifacts:read`, `events:subscribe`. `files:*`, `voice:use`, `ocr:use` get endpoints later.
-- **[planned] Approvals**: `approvals:read` and `approvals:decide`. Owner decision: keys may approve, via the separate `approvals:decide` scope (never in defaults or presets, must be minted explicitly), honouring the key's agent restriction and the owner's own authority, and every decision audited with `decided_via = api_key:<key id>`.
+- **[planned] Approvals**: `approvals:read` and `approvals:decide`. Planned: keys may approve, via the separate `approvals:decide` scope (never in defaults or presets, must be minted explicitly), honouring the key's agent restriction and the owner's own authority, and every decision audited with `decided_via = api_key:<key id>`.
 - **[planned] Inbound events**: an event stream (SSE with cursor replay) and signed webhook subscriptions for inbound gateway messages and run events.
 - **[planned] Per-key gateway restriction**, alongside the existing agent restriction, plus table/other resource restrictions.
 - **[planned] Mechanics**: declarative route table with scope enforced by the router, cursor pagination, `Idempotency-Key`, real rate limits (`429` + `Retry-After`), request audit log, generated OpenAPI, error-code taxonomy.

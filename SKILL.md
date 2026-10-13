@@ -37,7 +37,7 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
    - gateways / WhatsApp / Telegram / Slack / Email → `references/gateways-and-whatsapp.md`
    - decision runtime (JEV) → `references/decision-runtime-jev.md`
    - skills, data tables, knowledge, flows, approvals, memory, MCP, artifacts → `references/platform-surfaces.md`
-   - external API (Target 2) → `references/api-v1.md`
+   - external API (Target 2) → `references/api-v1.md` (endpoints and scopes that exist today; the Target 2 plan steps stay in this file's Target 2 section)
 
    Ask each reference's own "decision questions" only for the capabilities the user said yes to.
 
@@ -91,7 +91,7 @@ Present the plan explicitly and wait for go-ahead before executing.
 - **SPA deep-link tile (default, recommended)** — The app appears as a tile in HUF's dashboard; clicking it opens the agent in a chat interface. Works today. No gaps. Facts to respect (see `references/platform-surfaces.md` section 4): only `launch_mode: route` is accepted; SPA routes are hard-coded in the host frontend, so a manifest adds a tile but cannot add a page; `permission_method` hides the tile for users it denies but is not an authority check; first-party HUF apps are not manifests (install code seeds their `HUF App` records), so do not model a third-party app on them.
 - **Portal page** — The app appears as a page in the HUF portal. Flag two known gaps:
   - Missing per-app `www/` template registry — requires manual setup or a workaround.
-  - The `alias`, `is_public`, and `agent` fields are not in `ALLOWED_FIELDS`, so guest access requires a System Manager to manually edit the HUF App record after creation. Emit exact field values as a hand-off note.
+  - The manifest accepts `alias`, `is_public`, `agent`, `www_template` and `delivery` (see `ALLOWED_FIELDS`), so put the guest-access and portal values in the manifest. Per-app `www/` template registration still needs manual setup. Emit that step, with the exact values, as a hand-off note.
 - **Desk page** — NOT currently supported. The page.js pattern does not exist. Do not offer this without flagging it as unsupported.
 
 If the user chooses **Portal page** or **Desk page**, this skill's HUF-specific plan only decides
@@ -115,7 +115,7 @@ Present the plan explicitly and wait for go-ahead before executing.
 
 Reserved (can be minted, but **no endpoints enforce or serve them yet**): `files:read`, `files:write`, `voice:use`, `ocr:use`. Do not plan a Target 2 app around file, voice or OCR calls; say so and offer an in-HUF (Target 1) agent that handles them. Everything else (gateway routes, tables, skills, knowledge, flows, decisions, approvals, events, new scopes) is **[planned]** — not callable.
 
-List only the scopes the app actually needs. Approvals: `approvals:decide` for keys is an owner decision but **[planned]**; an external app cannot resume a paused run today.
+List only the scopes the app actually needs. Approvals: `approvals:decide` for keys is **[planned]**; an external app cannot resume a paused run today.
 
 **Auth facts:** send `X-Huf-Api-Key` (never `Authorization: Bearer`). Key auth is implemented; a key acts as its owner and can only reduce, never extend, the owner's authority. An invalid key is not rejected on its own: it falls through to session auth and returns `401` if there is no session.
 

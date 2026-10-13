@@ -5,7 +5,7 @@ Minimal Python client stub for calling HUF platform endpoints.
 Requires HUF_API_KEY environment variable (obtained from Developer Settings).
 
 Note: /huf/api/v1/ping does NOT validate the API key (no authentication required).
-Only /huf/api/v1/me requires authentication and actually tests whether the key is valid.
+/me is the cheapest call that requires authentication, so use it to test the key; every route except /ping requires auth.
 /me returns identity and capabilities of the key owner (not the key's scopes).
 Scopes enforced today: agents:read, agents:run, conversations:read, conversations:write.
 See references/api-v1.md. Beta API: no backward-compatibility guarantees.

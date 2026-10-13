@@ -10,12 +10,12 @@ ticket urgent", "which branch").
 branches (`pre-develop`, `develop`) it exists only as a Python library plus DocType schema.
 Nothing user-reachable is wired: there is no `@frappe.whitelist` API, no Agent field that holds
 bindings, no kill switch, no UI. The full activation (API, bindings, flow node, automation action,
-UI) is implemented on unmerged branches (the `decision-runtime/integration-final` line of PRs)
+UI) is implemented in unmerged decision-runtime PRs
 and is still pre-release. Until it merges, an app that needs a bounded decision should use a
 normal Agent (structured output, or a Flow `router.llm` node), and keep the decision question
 small and well-formed so it can move to the Decision Runtime later.
 
-Availability tags: **[available]** works today on the released/integration branch (`pre-develop`); **[pending: PR]** implemented in an unmerged PR or branch, so not on a stock site (check the target site); **[experimental/shadow]** built but off by default or unmerged, not safe to depend on; **[planned]** designed or decided, not built. Here, **[pending: PR]** means the `decision-runtime/integration-final` line of PRs.
+Availability tags: **[available]** works today on the released/integration branch (`pre-develop`); **[pending: PR]** implemented in an unmerged PR or branch, so not on a stock site (check the target site); **[experimental/shadow]** built but off by default or unmerged, not safe to depend on; **[planned]** designed or decided, not built. Here, **[pending: PR]** means the unmerged decision-runtime PRs.
 
 ## What it is, in plain terms
 
@@ -49,7 +49,7 @@ Backends in `huf/ai/decision/backends/`: `jev` (System One), `structured`, `loca
 **[available]** as library code. The Jev backend on `pre-develop` only works from Python with
 an environment API key (`from_environment()`); registry-built instances are unconfigured.
 **[experimental/shadow]** record-driven construction from Provider/Deployment rows, failover chain,
-and Decision Call persistence exist on the activation branches only.
+and Decision Call persistence code exists, but has no production caller on `pre-develop`.
 
 Policy definition (`definition_json`): `questions[]` (`id`, `type` select/judge/score,
 `instructions`, `options` for select), plus gates: minimum confidence, low-confidence action
