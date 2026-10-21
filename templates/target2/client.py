@@ -5,7 +5,10 @@ Minimal Python client stub for calling HUF platform endpoints.
 Requires HUF_API_KEY environment variable (obtained from Developer Settings).
 
 Note: /huf/api/v1/ping does NOT validate the API key (no authentication required).
-Only /huf/api/v1/me requires the key header and actually tests whether the key is valid.
+/me is the cheapest call that requires authentication, so use it to test the key; every route except /ping requires auth.
+/me returns identity and capabilities of the key owner (not the key's scopes).
+Scopes enforced today: agents:read, agents:run, conversations:read, conversations:write.
+See references/api-v1.md. Beta API: no backward-compatibility guarantees.
 """
 
 import os
@@ -47,38 +50,44 @@ class HufClient:
         response.raise_for_status()
         return response.json()
 
-    def list_agents(self) -> dict:
-        """POST /huf/api/v1/agents - List available agents."""
+    def list_agents(self, limit: int = 50, offset: int = 0) -> dict:
+        """GET /huf/api/v1/agents - List agents (scope agents:read)."""
         url = f"{self.base_url}/huf/api/v1/agents"
-        response = self.session.post(url, headers=self._get_headers(), json={})
+        response = self.session.get(
+            url, headers=self._get_headers(), params={"limit": limit, "offset": offset}
+        )
         response.raise_for_status()
         return response.json()
 
-    def create_conversation(self, agent_name: str) -> dict:
-        """POST /huf/api/v1/conversations - Start a new conversation."""
+    def create_conversation(self, agent_id: str, title: str | None = None) -> dict:
+        """POST /huf/api/v1/conversations - Start a conversation (scope conversations:write)."""
         url = f"{self.base_url}/huf/api/v1/conversations"
-        response = self.session.post(
-            url, headers=self._get_headers(), json={"agent": agent_name}
-        )
+        body = {"agent_id": agent_id}
+        if title:
+            body["title"] = title
+        response = self.session.post(url, headers=self._get_headers(), json=body)
         response.raise_for_status()
         return response.json()
 
-    def send_message(self, conversation_id: str, message: str) -> dict:
-        """POST /huf/api/v1/responses - Send a message to a conversation."""
+    def send_message(
+        self, agent_id: str, message: str, conversation_id: str | None = None
+    ) -> dict:
+        """POST /huf/api/v1/responses - Run an agent turn (scope agents:run).
+
+        Queue-first: usually returns status "queued" with output null.
+        Poll get_run(data.response_id) for the result.
+        """
         url = f"{self.base_url}/huf/api/v1/responses"
-        response = self.session.post(
-            url,
-            headers=self._get_headers(),
-            json={"conversation_id": conversation_id, "message": message},
-        )
+        body = {"agent_id": agent_id, "input": message}
+        if conversation_id:
+            body["conversation_id"] = conversation_id
+        response = self.session.post(url, headers=self._get_headers(), json=body)
         response.raise_for_status()
         return response.json()
 
-    def get_run_status(self, run_id: str) -> dict:
-        """POST /huf/api/v1/runs - Poll run status."""
-        url = f"{self.base_url}/huf/api/v1/runs"
-        response = self.session.post(
-            url, headers=self._get_headers(), json={"run_id": run_id}
-        )
+    def get_run(self, run_id: str) -> dict:
+        """GET /huf/api/v1/runs/{run_id} - Run status/output (scope conversations:read)."""
+        url = f"{self.base_url}/huf/api/v1/runs/{run_id}"
+        response = self.session.get(url, headers=self._get_headers())
         response.raise_for_status()
         return response.json()
