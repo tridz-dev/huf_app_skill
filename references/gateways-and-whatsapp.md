@@ -81,6 +81,8 @@ Reply policy: after the agent finishes, the reply is sent back through the same 
 
 ## 5. WhatsApp specifics
 
+Deeper operational detail (two token stores, send actions, caps/idempotency, health, template lifecycle) lives in [whatsapp-gateway.md](whatsapp-gateway.md) and [whatsapp-templates.md](whatsapp-templates.md); this section is the summary and keeps the availability tags.
+
 ### Modes
 
 | | Direct mode **[available]** | Bridge mode **[pending: tridz-dev/huf PR #806]** |
@@ -109,17 +111,17 @@ If bridge mode is used, block the unsigned `frappe_whatsapp` webhook (`/api/meth
 - Approval workflow: an agent or user creates a `WhatsApp Template Draft`; a human approves or rejects it in HUF; on approval it is submitted to Meta once. Meta then reviews it (APPROVED / REJECTED / PAUSED).
 - Template status and quality updates arrive only on the Meta app's default callback; route by WABA id.
 
-### Server-side flags (Integration Settings, never LLM arguments)
+### Server-side flags (Gateway checkboxes, never LLM arguments)
 
-| Flag | Effect |
-| --- | --- |
-| `allow_proactive` | Agent may send free-form messages to numbers with no open window |
-| `allow_whatsapp_management` | Agent may create templates (as drafts); also allows proactive free-form sends |
-| `auto_submit_templates` | With `allow_whatsapp_management`, agent-created templates go straight to Meta instead of a draft |
+| Tool-side name | Gateway field | Effect |
+| --- | --- | --- |
+| `allow_proactive` | `agent_allow_proactive` | Agent may send free-form messages to numbers with no open window |
+| `allow_whatsapp_management` | `agent_allow_template_management` | Agent may create templates (as drafts) |
+| `auto_submit_templates` | `agent_auto_submit_templates` | With template management, agent-created templates go straight to Meta instead of a draft |
 
 These are set by the installer/admin, default off, and are stripped if an LLM passes them as tool arguments. An app must not seed them on; list them in the hand-off as opt-in.
 
-The flags are read from the first active WhatsApp Integration Settings row, not per Gateway. With several WhatsApp Gateways, treat them as site-wide: one setting applies to all of them.
+The flags are read from the run's own Gateway (`_server_flag` in `huf/ai/tools/whatsapp.py`), so each WhatsApp Gateway has its own settings. See [whatsapp-gateway.md](whatsapp-gateway.md) for the live-verified behaviour.
 
 ### Agent tool actions  **[pending: tridz-dev/huf PR #806]**
 

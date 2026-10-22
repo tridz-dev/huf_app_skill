@@ -129,6 +129,29 @@ Each capability is tagged **[available]**, **[pending: PR]**,
 that isn't `[available]` without telling you and offering the supported
 alternative.
 
+### Messaging operations, flows and media
+
+The skill can now also plan WhatsApp-connected apps (operations depth; tagged per the availability convention above): Gateway and WhatsApp
+templates, deterministic (non-LLM) Flow Definitions, voice/audio/media, and
+model/provider keys. These are set up after sync (the seeder does not import
+them) and are documented in `references/`.
+
+## File map
+
+| Path | Purpose |
+|---|---|
+| `SKILL.md` | The instructions the agent follows |
+| `references/whatsapp-gateway.md` | Gateway setup, access, 24h window, send actions |
+| `references/whatsapp-templates.md` | Templates, template guard, MCP approval |
+| `references/flows.md` | Flow engine nodes and triggers |
+| `references/end-to-end-recipes.md` | Worked builds and known gaps |
+| `references/audio-and-media.md` | Voice, audio, image and document handling |
+| `references/models-and-keys.md` | Model catalogue and provider keys |
+| `references/testing-and-pitfalls.md` | Testing and pitfall list |
+| `templates/target1/` | Seed JSON templates, `flow_definition.json.template`, `examples/` |
+| `references/gateways-and-whatsapp.md`, `decision-runtime-jev.md`, `platform-surfaces.md`, `api-v1.md` | Capability references (see Capabilities above) |
+| `templates/target2/` | External client stubs |
+
 ## Examples
 
 **Inside HUF**

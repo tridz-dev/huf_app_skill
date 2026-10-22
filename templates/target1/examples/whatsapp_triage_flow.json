@@ -1,0 +1,391 @@
+{
+  "schema_version": "1.0.0",
+  "profile": "flow",
+  "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+  "entry": "start",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "trigger.webhook",
+      "config": {
+        "method": "POST"
+      },
+      "next": "trim"
+    },
+    {
+      "id": "trim",
+      "type": "transform",
+      "config": {
+        "op": "trim",
+        "input": {
+          "text": {
+            "$from": "input.message"
+          }
+        }
+      },
+      "next": "lower"
+    },
+    {
+      "id": "lower",
+      "type": "transform",
+      "config": {
+        "op": "lower",
+        "input": {
+          "text": {
+            "$from": "trim"
+          }
+        }
+      },
+      "next": "get_state"
+    },
+    {
+      "id": "get_state",
+      "type": "state.get",
+      "config": {
+        "key": {
+          "$template": "wa:{s}",
+          "vars": {
+            "s": {
+              "$from": "input.sender_id"
+            }
+          }
+        }
+      },
+      "next": "cond_pending"
+    },
+    {
+      "id": "cond_pending",
+      "type": "condition",
+      "config": {
+        "expression": "context[\"outputs\"][\"get_state\"][\"found\"]",
+        "on_true": "extract_refund_num",
+        "on_false": "has_order"
+      }
+    },
+    {
+      "id": "extract_refund_num",
+      "type": "transform",
+      "config": {
+        "op": "regex_extract",
+        "input": {
+          "text": {
+            "$from": "lower"
+          },
+          "pattern": "\\d+"
+        }
+      },
+      "next": "cond_refund_num"
+    },
+    {
+      "id": "cond_refund_num",
+      "type": "condition",
+      "config": {
+        "expression": "context[\"outputs\"][\"extract_refund_num\"] != None",
+        "on_true": "create_refund_todo",
+        "on_false": "has_order"
+      }
+    },
+    {
+      "id": "create_refund_todo",
+      "type": "doc.create",
+      "config": {
+        "doctype": "ToDo",
+        "fields": {
+          "description": {
+            "$template": "Refund request for order #{o} from WhatsApp {s}",
+            "vars": {
+              "o": {
+                "$from": "extract_refund_num"
+              },
+              "s": {
+                "$from": "input.sender_id"
+              }
+            }
+          }
+        }
+      },
+      "next": "clear_state"
+    },
+    {
+      "id": "clear_state",
+      "type": "state.delete",
+      "config": {
+        "key": {
+          "$template": "wa:{s}",
+          "vars": {
+            "s": {
+              "$from": "input.sender_id"
+            }
+          }
+        }
+      },
+      "next": "reply_refund_logged"
+    },
+    {
+      "id": "reply_refund_logged",
+      "type": "output",
+      "config": {
+        "value": {
+          "$template": "Refund logged for order #{o}. Reference {t}. We will update you soon.",
+          "vars": {
+            "o": {
+              "$from": "extract_refund_num"
+            },
+            "t": {
+              "$from": "create_refund_todo.name"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "has_order",
+      "type": "transform",
+      "config": {
+        "op": "contains",
+        "input": {
+          "text": {
+            "$from": "lower"
+          },
+          "needle": "order"
+        }
+      },
+      "next": "cond_order"
+    },
+    {
+      "id": "cond_order",
+      "type": "condition",
+      "config": {
+        "expression": "context[\"outputs\"][\"has_order\"] == True or context[\"outputs\"][\"lower\"] == \"1\"",
+        "on_true": "extract_order_num",
+        "on_false": "has_refund"
+      }
+    },
+    {
+      "id": "extract_order_num",
+      "type": "transform",
+      "config": {
+        "op": "regex_extract",
+        "input": {
+          "text": {
+            "$from": "lower"
+          },
+          "pattern": "\\d+"
+        }
+      },
+      "next": "cond_order_num"
+    },
+    {
+      "id": "cond_order_num",
+      "type": "condition",
+      "config": {
+        "expression": "context[\"outputs\"][\"extract_order_num\"] != None",
+        "on_true": "reply_order_status",
+        "on_false": "reply_order_ask"
+      }
+    },
+    {
+      "id": "reply_order_status",
+      "type": "output",
+      "config": {
+        "value": {
+          "$template": "Thanks. We are checking order #{o} and will reply here.",
+          "vars": {
+            "o": {
+              "$from": "extract_order_num"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reply_order_ask",
+      "type": "output",
+      "config": {
+        "value": {
+          "$template": "Which order? Send e.g. order 4521."
+        }
+      }
+    },
+    {
+      "id": "has_refund",
+      "type": "transform",
+      "config": {
+        "op": "contains",
+        "input": {
+          "text": {
+            "$from": "lower"
+          },
+          "needle": "refund"
+        }
+      },
+      "next": "cond_refund"
+    },
+    {
+      "id": "cond_refund",
+      "type": "condition",
+      "config": {
+        "expression": "context[\"outputs\"][\"has_refund\"] == True or context[\"outputs\"][\"lower\"] == \"2\"",
+        "on_true": "remember_refund",
+        "on_false": "has_hours"
+      }
+    },
+    {
+      "id": "remember_refund",
+      "type": "state.set",
+      "config": {
+        "key": {
+          "$template": "wa:{s}",
+          "vars": {
+            "s": {
+              "$from": "input.sender_id"
+            }
+          }
+        },
+        "value": {
+          "awaiting": "order_number"
+        },
+        "ttl_seconds": 600
+      },
+      "next": "reply_ask_order"
+    },
+    {
+      "id": "reply_ask_order",
+      "type": "output",
+      "config": {
+        "value": {
+          "$template": "Sorry about that. Please send your order number."
+        }
+      }
+    },
+    {
+      "id": "has_hours",
+      "type": "transform",
+      "config": {
+        "op": "contains",
+        "input": {
+          "text": {
+            "$from": "lower"
+          },
+          "needle": "hours"
+        }
+      },
+      "next": "cond_hours"
+    },
+    {
+      "id": "cond_hours",
+      "type": "condition",
+      "config": {
+        "expression": "context[\"outputs\"][\"has_hours\"] == True or context[\"outputs\"][\"lower\"] == \"3\"",
+        "on_true": "reply_hours",
+        "on_false": "has_human"
+      }
+    },
+    {
+      "id": "reply_hours",
+      "type": "output",
+      "config": {
+        "value": {
+          "$template": "We are open Mon-Sat, 9:00-18:00."
+        }
+      }
+    },
+    {
+      "id": "has_human",
+      "type": "transform",
+      "config": {
+        "op": "contains",
+        "input": {
+          "text": {
+            "$from": "lower"
+          },
+          "needle": "human"
+        }
+      },
+      "next": "cond_human"
+    },
+    {
+      "id": "cond_human",
+      "type": "condition",
+      "config": {
+        "expression": "context[\"outputs\"][\"has_human\"] == True or context[\"outputs\"][\"lower\"] == \"4\"",
+        "on_true": "create_handoff_todo",
+        "on_false": "reply_menu"
+      }
+    },
+    {
+      "id": "create_handoff_todo",
+      "type": "doc.create",
+      "config": {
+        "doctype": "ToDo",
+        "fields": {
+          "description": {
+            "$template": "WhatsApp hand-off from {s}: {m}",
+            "vars": {
+              "s": {
+                "$from": "input.sender_id"
+              },
+              "m": {
+                "$from": "trim"
+              }
+            }
+          }
+        }
+      },
+      "next": "reply_handoff"
+    },
+    {
+      "id": "reply_handoff",
+      "type": "output",
+      "config": {
+        "value": {
+          "$template": "Connecting you with a person. Reference {t}.",
+          "vars": {
+            "t": {
+              "$from": "create_handoff_todo.name"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reply_menu",
+      "type": "output",
+      "config": {
+        "value": {
+          "$template": "Reply with: 1 order status, 2 refund, 3 opening hours, 4 talk to a person."
+        }
+      }
+    }
+  ],
+  "contract": {
+    "input_schema": {
+      "type": "object"
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "applies_when": [],
+    "permission_envelope": {
+      "read": [],
+      "write": [
+        {
+          "doctype": "ToDo"
+        }
+      ],
+      "http": "none",
+      "code": "none"
+    },
+    "limits": {
+      "max_nodes": 40,
+      "max_rows": 1000,
+      "max_output_bytes": 100000,
+      "max_parallel_calls": 1,
+      "max_foreach_iterations": 1,
+      "max_external_calls": 5,
+      "max_writes": 2,
+      "max_wall_time_ms": 5000,
+      "fail_closed": true
+    }
+  }
+}

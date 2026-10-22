@@ -40,6 +40,7 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
    - external API (Target 2) → `references/api-v1.md` (endpoints and scopes that exist today; the Target 2 plan steps stay in this file's Target 2 section)
 
    Ask each reference's own "decision questions" only for the capabilities the user said yes to.
+9. **Flows, voice and media depth (Target 1 only)** — Ask: **"Should the agent talk to people on a messaging channel (WhatsApp), do any steps need to be deterministic (keyword routing, canned replies, no LLM), and does it handle voice/audio/images/documents?"** If yes to any, read the matching reference in "Reference Templates" below (WhatsApp operations -> `references/whatsapp-gateway.md`, after `references/gateways-and-whatsapp.md`; outside the 24h window -> `references/whatsapp-templates.md`; non-LLM -> `references/flows.md`; voice/media -> `references/audio-and-media.md`; worked builds -> `references/end-to-end-recipes.md`).
 
 ### Availability tags
 
@@ -73,6 +74,12 @@ Present the plan explicitly and wait for go-ahead before executing.
 - Agent Trigger — optional; how the agent is invoked (manual, scheduled, webhook, etc.)
 
 **Agent capabilities:** List only the non-default fields Step 1's capability answer requires (e.g. `stt_model`+`tts_model` for voice, `image_generation_model` for image gen, `enable_memory`+`memory_policy` for memory). Look them up in `templates/target1/AGENT_CONFIG_REFERENCE.md` — a single indexed table of every relevant `Agent` field, grouped by capability, with type/default/purpose. Do not set fields the plan doesn't call for.
+
+**Messaging, flows and media (only if Step 1 Q8 or Q9 = yes)** — add these rows to the plan; none of them is seedable:
+- Gateway (+ WhatsApp Account, credentials entered by the user) — `references/whatsapp-gateway.md`
+- WhatsApp templates (Meta approval needed outside the 24h window) — `references/whatsapp-templates.md`
+- Flow Definition(s) for deterministic routing — `references/flows.md`, shape in `templates/target1/flow_definition.json.template`
+- Models and provider keys for STT/TTS/image (`stt_model`, `tts_model`, `image_generation_model`, voice reply mode) — `references/models-and-keys.md`, `references/audio-and-media.md`
 
 **Model & Provider selection:**
 - Call the live endpoints to list available AI Providers and AI Models from the user's site (see Model & Provider Suggestion section below).
@@ -177,6 +184,10 @@ Before writing any files:
 2. **Check sync_status** — Verify that the app and its DocTypes synced successfully. If there are errors, surface them and help the user fix them.
 3. **Graceful degradation** — If no live bench is reachable, provide a summary of the files created and tell the user: "Here are the seed files. You can install and migrate them manually using `bench install` and `bench migrate`, or copy them into your app and run the sync yourself."
 
+### Post-sync setup (not seedable)
+
+The app seeder imports only prompts, tools, knowledge, agents and triggers. **Gateway, WhatsApp Account, WhatsApp templates and Flow Definitions are NOT seeded**: create them after sync through the desk or the REST API, using the exact DocType/field/function names in the references (`references/whatsapp-gateway.md`, `references/whatsapp-templates.md`, `references/flows.md`; example flow: `templates/target1/examples/whatsapp_triage_flow.json`). Never invent a seed folder for them. Credentials (Meta tokens, app secrets) are entered by the user in the desk, never written to files or echoed. For a full worked build see `references/end-to-end-recipes.md`; for known limits see its "Known gaps" section.
+
 ### Do NOT
 
 - Run `bench new-app <name>`. Assume the Frappe app already exists. If it doesn't, tell the user to run that command themselves as a prerequisite.
@@ -218,6 +229,7 @@ Before writing any files:
 
 1. **Confirm sync** — Verify the app manifest synced and appears in the HUF App list.
 2. **Test the agent** — Run one test turn with the agent (via the chat interface or API call). Confirm it responds correctly.
+2a. **If a Gateway/flow was set up** — check gateway health (see `references/whatsapp-gateway.md`), dry-run each Flow Definition with a sample event, then do a live check following `references/testing-and-pitfalls.md` (fake graph, then `tools/wa_live_smoke.py` on an isolated site). Confirm exactly one reply per inbound event.
 3. **Summarize what was created**:
    - App ID and delivery method
    - List of seeded DocTypes and their IDs
@@ -295,5 +307,18 @@ Starting-point JSON schemas and code templates are located in this skill's `temp
   - `SCOPES.md` — scope reference and key-handling notes
   - `.env.example` — environment variable template (empty value)
   - `.gitignore.snippet` — the `.env` line to add to the app's `.gitignore`
+
+- **templates/target1/** (additions)
+  - `flow_definition.json.template` — Flow Definition record; read when creating a flow post-sync
+  - `examples/whatsapp_triage_flow.json` — working non-LLM triage flow; read when building keyword routing
+
+- **references/** — read only the file the Step 1 answers need
+  - `whatsapp-gateway.md` — read when the agent/flow talks on WhatsApp (gateway setup, tokens, access/pairing, 24h window, send actions, health)
+  - `whatsapp-templates.md` — read when sending outside the 24h window, creating templates, or using Meta's MCP
+  - `flows.md` — read when any step must be deterministic/non-LLM (node catalogue, state, conditions, triggers)
+  - `end-to-end-recipes.md` — read for full worked builds (triage flow, agent with voice replies, template notification) and known gaps
+  - `audio-and-media.md` — read when handling voice, audio, images or documents inbound/outbound
+  - `models-and-keys.md` — read when choosing STT/TTS/image models and provider keys
+  - `testing-and-pitfalls.md` — read before verifying or when something misbehaves (fake graph, live smoke, pitfall list)
 
 Reference these when scaffolding; do not invent structures.
