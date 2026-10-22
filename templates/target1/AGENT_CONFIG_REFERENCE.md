@@ -20,9 +20,9 @@ excluded — out of scope for this skill.
 | **Vision / Document Upload** | `allow_file_upload` | Check | 0 | Let users attach files/images in chat |
 | | `enable_ocr` | Check | 0 | Route uploads through OCR instead of vision/local extraction |
 | | `max_upload_size_mb` | Int | 25 | Per-file cap, capped globally at 25MB |
-| **Image Generation** | `image_generation_model` | Link | — | Model for the image-gen tool; falls back to provider default if unset |
-| **Audio: STT/TTS** | `stt_model` | Link | — | Speech-to-text model for audio transcription |
-| | `tts_model` / `tts_voice` | Link / Data | — | Text-to-speech model + voice (e.g. `alloy`, `echo`, `onyx`) |
+| **Image Generation** | `image_generation_model` | Link | — | AI Model with `Image` modality for the image-gen tool; uses that model's own provider key; falls back to the agent provider's default if unset |
+| **Audio: STT/TTS** | `stt_model` | Link | — | AI Model with `Transcription` modality (e.g. `gemini-flash-latest`); used for voice-note transcripts |
+| | `tts_model` / `tts_voice` | Link / Data | — | AI Model with `Text-to-Speech` modality + voice (e.g. `alloy`, `echo`, `onyx`; Gemini: `Puck`) |
 | **Context & Summarization** | `context_strategy` | Select | Summarize | `Summarize` (LLM-compress old messages) / `FIFO` (drop oldest) / `None` |
 | | `history_limit` | Int | 20 | Messages before the strategy triggers |
 | | `summary_ratio` | Float | 0.7 | Fraction of history compressed |
@@ -58,6 +58,12 @@ excluded — out of scope for this skill.
 | **Runtime** | `async` / `run_immediately` | Check | 0 / 0 | Queue in background vs. run inline on submit |
 | | `disabled` | Check | 0 | Kill switch |
 | | `autonaming_of_conversation_title` | Check | 1 | Auto-title new conversations |
+
+Notes on media fields: a model whose modality does not match is rejected on save (for example "Selected STT Model does
+not support modality: Transcription"); `enable_ocr` additionally needs the agent's `model` to have the `OCR` modality.
+Each media model uses its own provider's API key, not the chat provider's. WhatsApp voice-note replies are not an Agent
+field: they are `Gateway.voice_reply_mode` (`Off` / `Voice only` / `Text and voice`). Details, tool attachments
+(`generate_image`, `generate_audio`, `whatsapp`) and recipes: `references/audio-and-media.md`, `references/models-and-keys.md`.
 
 ## DocType-connected tools (Agent Tool Function)
 
