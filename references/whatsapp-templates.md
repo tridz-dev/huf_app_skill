@@ -126,6 +126,6 @@ Source: huf/huf/doctype/gateway/gateway.py, docs/gateways/whatsapp-runbook.md
 
 Re-syncing keeps the admin's `requires_approval` choice. Never mark a send/mutate tool as not requiring approval just to make a demo pass.
 
-**Meta WhatsApp Business Tools MCP status (observed 2026-10-22).** The Meta app dashboard shows a "WhatsApp Business Tools MCP" banner. OAuth sign-in works, but the MCP server answered **401 "restricted to certain users"** for the tested account; Meta appears to be rolling it out in beta. Treat it as unavailable until a call succeeds for your account: do not build an app that depends on it, and use HUF's own `whatsapp` tool and management API instead. If it becomes available, add it as an MCP Server, sync, keep approval on for non-read-only tools, and verify with one read-only call first.
+**Meta WhatsApp Business Tools MCP status (observed 2026-10-22).** The Meta app dashboard shows a "WhatsApp Business Tools MCP" banner. OAuth/consent/token exchange was verified with the real Meta server on 2026-10-22; the WhatsApp Business Tools MCP server returned **401 "restricted to certain users"** for the tested account (beta rollout). Treat it as unavailable until a call succeeds for your account: do not build an app that depends on it, and use HUF's own `whatsapp` tool and management API instead. If it becomes available, add it as an MCP Server, sync, keep approval on for non-read-only tools, and verify with one read-only call first.
 
 Source: huf/ai/mcp_client.py, huf/ai/flow_engine.py

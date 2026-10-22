@@ -111,6 +111,28 @@ list-apps`, then each DocType's live meta) instead of guessing field names
 from general ERPNext/CRM knowledge — schemas vary by version and
 customization.
 
+### New: messaging, flows and media
+
+The skill can now also plan WhatsApp-connected apps: Gateway and WhatsApp
+templates, deterministic (non-LLM) Flow Definitions, voice/audio/media, and
+model/provider keys. These are set up after sync (the seeder does not import
+them) and are documented in `references/`.
+
+## File map
+
+| Path | Purpose |
+|---|---|
+| `SKILL.md` | The instructions the agent follows |
+| `references/whatsapp-gateway.md` | Gateway setup, access, 24h window, send actions |
+| `references/whatsapp-templates.md` | Templates, template guard, MCP approval |
+| `references/flows.md` | Flow engine nodes and triggers |
+| `references/end-to-end-recipes.md` | Worked builds and known gaps |
+| `references/audio-and-media.md` | Voice, audio, image and document handling |
+| `references/models-and-keys.md` | Model catalogue and provider keys |
+| `references/testing-and-pitfalls.md` | Testing and pitfall list |
+| `templates/target1/` | Seed JSON templates, `flow_definition.json.template`, `examples/` |
+| `templates/target2/` | External client stubs |
+
 ## Examples
 
 **Inside HUF**

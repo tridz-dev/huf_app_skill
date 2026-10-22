@@ -149,3 +149,13 @@ doc-event / schedule runs (via `set_flow_trigger`, an Automation) have neither, 
 - Not confirmed: Meta-side delivery receipts feeding back into the Flow Run (none stored on the run).
 
 Source: huf/ai/tools/whatsapp.py, huf/ai/flow_engine.py, huf/ai/graph/graph_ir.schema.json, huf/huf/doctype/automation/automation.json
+
+## Known gaps found while documenting
+
+Verify each against your Huf version before relying on the workaround.
+
+- No deterministic (non-LLM) doc-event or schedule-triggered WhatsApp send: the WhatsApp tool takes its gateway only from a Gateway Event, and `tool.call.config.gateway` is rejected by the schema. Proactive sends need an Agent or a gateway-event flow.
+- `agent.run` / `router.llm` schema field names (`agent`, `router.llm`) differ from what the engine reads (`agent_name`, `router_agent_name`). Verify in `flow_engine.py` before use.
+- `http_request`, `loop` and `end` are not saveable Flow node types.
+- Node outputs are not kept across pause/resume (e.g. after `human.approval`); re-derive values from state.
+- Docs lag code for template header types: VIDEO/LOCATION, COPY_CODE buttons and NAMED variables are accepted; AUTHENTICATION is rejected.

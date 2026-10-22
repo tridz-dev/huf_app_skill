@@ -210,7 +210,7 @@ Source: ongoing/whatsapp/gap2/SWARM_STATE.md (PR #828 note)
 7. A Disconnected gateway (`account_update` PARTNER_REMOVED, ban DISABLE) must refuse EVERY send path,
    including agent `send_message` / `send_template`; check `send_refusal` in all of them (defect DEF-2 found
    no-phone: only adapter and typed sends were guarded).
-8. The webhook GET verify handshake must answer while a gateway is disabled, or Meta cannot (re)subscribe.
+8. Webhook GET verification must work while a gateway is disabled (Meta verifies the callback when it is saved, before enabling the gateway); fixed in tridz-dev/huf PR #822 (commit 0c285c07, huf/ai/gateway_webhook.py): only ingest is gated on is_enabled.
 9. The gateway `execution_user` needs permission to use the WhatsApp tool; default Huf Gateway User got
    `permission_denied` (DEF-1). Test with the real execution user, not Administrator.
 10. Direct `frappe.db.set_value` (and bench scripts) skips DocType validation and hooks. Use `doc.save()` when
