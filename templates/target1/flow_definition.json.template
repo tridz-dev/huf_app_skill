@@ -1,0 +1,48 @@
+{
+  "doctype": "Flow Definition",
+  "flow_id": "<FLOW_ID>",
+  "flow_name": "<FLOW_NAME>",
+  "status": "Draft",
+  "definition_json": {
+    "schema_version": "1.0.0",
+    "profile": "flow",
+    "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+    "entry": "start",
+    "nodes": [
+      { "id": "start", "type": "trigger.webhook", "config": { "method": "POST" }, "next": "normalise" },
+      {
+        "id": "normalise",
+        "type": "transform",
+        "config": { "op": "lower", "input": { "text": { "$from": "input.message" } } },
+        "next": "reply"
+      },
+      {
+        "id": "reply",
+        "type": "output",
+        "config": {
+          "value": {
+            "$template": "<REPLY_TEXT_WITH_{placeholders}>",
+            "vars": { "placeholders": { "$from": "normalise" } }
+          }
+        }
+      }
+    ],
+    "contract": {
+      "input_schema": { "type": "object" },
+      "output_schema": { "type": "object" },
+      "applies_when": [],
+      "permission_envelope": { "read": [], "write": [], "http": "none", "code": "none" },
+      "limits": {
+        "max_nodes": 40,
+        "max_rows": 1000,
+        "max_output_bytes": 100000,
+        "max_parallel_calls": 1,
+        "max_foreach_iterations": 1,
+        "max_external_calls": 5,
+        "max_writes": 0,
+        "max_wall_time_ms": 5000,
+        "fail_closed": true
+      }
+    }
+  }
+}
