@@ -33,7 +33,21 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
 6. **Capabilities (Target 1 only)** — Ask, as one bundled question, which of these the agent needs: **vision/document upload, image generation, voice (STT/TTS), custom context/summarization strategy, reasoning control, prompt caching, memory, or code execution/SSH tools.** Don't assume "just a chat prompt" — these are real, common Agent fields (see `templates/target1/AGENT_CONFIG_REFERENCE.md`), not add-ons. Skip any group the user doesn't need; every field in that reference defaults to off/unset if you never touch it.
 7. **Other installed apps (Target 1 only)** — Ask: **"Does this agent need to read or write data in another installed app — CRM, ERPNext, HR, etc.?"** If yes, run App & DocType Discovery (below) before planning tools, rather than guessing DocType/field names from general Frappe/ERPNext knowledge.
 
-8. **Messaging channels and flows (Target 1 only)** — Ask: **"Should the agent talk to people on a messaging channel (WhatsApp), do any steps need to be deterministic (keyword routing, canned replies, no LLM), and does it handle voice/audio/images/documents?"** If yes to any, read the matching reference in "Reference Templates" below (WhatsApp -> `references/whatsapp-gateway.md`; outside the 24h window -> `references/whatsapp-templates.md`; non-LLM -> `references/flows.md`; voice/media -> `references/audio-and-media.md`; worked builds -> `references/end-to-end-recipes.md`).
+8. **Which HUF capabilities does the app use?** — Ask as one bundled question: **gateways/messaging channel, decision runtime (JEV), skills, data tables, knowledge, flows, approvals, external API.** For each "yes", read the matching reference before planning and respect its availability tags:
+   - gateways / WhatsApp / Telegram / Slack / Email → `references/gateways-and-whatsapp.md`
+   - decision runtime (JEV) → `references/decision-runtime-jev.md`
+   - skills, data tables, knowledge, flows, approvals, memory, MCP, artifacts → `references/platform-surfaces.md`
+   - external API (Target 2) → `references/api-v1.md` (endpoints and scopes that exist today; the Target 2 plan steps stay in this file's Target 2 section)
+
+   Ask each reference's own "decision questions" only for the capabilities the user said yes to.
+9. **Flows, voice and media depth (Target 1 only)** — Ask: **"Should the agent talk to people on a messaging channel (WhatsApp), do any steps need to be deterministic (keyword routing, canned replies, no LLM), and does it handle voice/audio/images/documents?"** If yes to any, read the matching reference in "Reference Templates" below (WhatsApp operations -> `references/whatsapp-gateway.md`, after `references/gateways-and-whatsapp.md`; outside the 24h window -> `references/whatsapp-templates.md`; non-LLM -> `references/flows.md`; voice/media -> `references/audio-and-media.md`; worked builds -> `references/end-to-end-recipes.md`).
+
+### Availability tags
+
+Every capability in `references/` carries a tag. **[available]** works today on the released branch; **[pending: PR]** exists only in an unmerged PR/branch (e.g. the WhatsApp bridge, `tridz-dev/huf` PR #806); **[experimental/shadow]** built but off by default or unmerged; **[planned]** designed, not built.
+
+- Never plan on a **[planned]**, **[pending]** or **[experimental]** capability without telling the user, and offer the supported alternative the reference gives (e.g. a normal Agent with structured output instead of JEV).
+- Never seed gateways, `Integration Settings`, credentials, secrets, sender ids or phone numbers. The app ships the target Agent/Flow; the installer creates and enables the Gateway.
 
 If the user is working in a Frappe bench directory, suggest "This looks like you have a bench. Are you seeding this app inside it?" — but still ask; never assume.
 
@@ -61,7 +75,7 @@ Present the plan explicitly and wait for go-ahead before executing.
 
 **Agent capabilities:** List only the non-default fields Step 1's capability answer requires (e.g. `stt_model`+`tts_model` for voice, `image_generation_model` for image gen, `enable_memory`+`memory_policy` for memory). Look them up in `templates/target1/AGENT_CONFIG_REFERENCE.md` — a single indexed table of every relevant `Agent` field, grouped by capability, with type/default/purpose. Do not set fields the plan doesn't call for.
 
-**Messaging, flows and media (only if Step 1 Q8 = yes)** — add these rows to the plan; none of them is seedable:
+**Messaging, flows and media (only if Step 1 Q8 or Q9 = yes)** — add these rows to the plan; none of them is seedable:
 - Gateway (+ WhatsApp Account, credentials entered by the user) — `references/whatsapp-gateway.md`
 - WhatsApp templates (Meta approval needed outside the 24h window) — `references/whatsapp-templates.md`
 - Flow Definition(s) for deterministic routing — `references/flows.md`, shape in `templates/target1/flow_definition.json.template`
@@ -81,10 +95,10 @@ Present the plan explicitly and wait for go-ahead before executing.
 - *Shipping to others*: only seed knowledge content that is safe to distribute (generic docs, public reference material, or nothing). Never seed the builder's private/internal documents into an app meant to be installed elsewhere.
 
 **Delivery method — pick one:**
-- **SPA deep-link tile (default, recommended)** — The app appears as a tile in HUF's dashboard; clicking it opens the agent in a chat interface. Works today. No gaps.
+- **SPA deep-link tile (default, recommended)** — The app appears as a tile in HUF's dashboard; clicking it opens the agent in a chat interface. Works today. No gaps. Facts to respect (see `references/platform-surfaces.md` section 4): only `launch_mode: route` is accepted; SPA routes are hard-coded in the host frontend, so a manifest adds a tile but cannot add a page; `permission_method` hides the tile for users it denies but is not an authority check; first-party HUF apps are not manifests (install code seeds their `HUF App` records), so do not model a third-party app on them.
 - **Portal page** — The app appears as a page in the HUF portal. Flag two known gaps:
   - Missing per-app `www/` template registry — requires manual setup or a workaround.
-  - The `alias`, `is_public`, and `agent` fields are not in `ALLOWED_FIELDS`, so guest access requires a System Manager to manually edit the HUF App record after creation. Emit exact field values as a hand-off note.
+  - The manifest accepts `alias`, `is_public`, `agent`, `www_template` and `delivery` (see `ALLOWED_FIELDS`), so put the guest-access and portal values in the manifest. Per-app `www/` template registration still needs manual setup. Emit that step, with the exact values, as a hand-off note.
 - **Desk page** — NOT currently supported. The page.js pattern does not exist. Do not offer this without flagging it as unsupported.
 
 If the user chooses **Portal page** or **Desk page**, this skill's HUF-specific plan only decides
@@ -100,24 +114,24 @@ portal/desk API shapes.
 
 Present the plan explicitly and wait for go-ahead before executing.
 
-**API scopes the app needs:**
-- `agents:read` — list/fetch agent definitions
-- `agents:run` — execute an agent
-- `conversations:read` — fetch conversation history
-- `conversations:write` — create or update conversations
-- `files:read` — download files from conversations
-- `files:write` — upload files for the agent to reference
-- `voice:use` — make voice/audio API calls
-- `ocr:use` — use OCR/vision capabilities
+**API scopes the app needs** (full table and routes in `references/api-v1.md`). Enforced today:
+- `agents:read` — `GET /agents`, `GET /agents/{id}`
+- `agents:run` — `POST /responses` (queue-first; poll `GET /runs/{id}`, or `stream: true` for Run Immediately agents)
+- `conversations:read` — conversations, messages, and `GET /runs/{id}`
+- `conversations:write` — `POST /conversations`
 
-List only the scopes the app actually needs.
+Reserved (can be minted, but **no endpoints enforce or serve them yet**): `files:read`, `files:write`, `voice:use`, `ocr:use`. Do not plan a Target 2 app around file, voice or OCR calls; say so and offer an in-HUF (Target 1) agent that handles them. Everything else (gateway routes, tables, skills, knowledge, flows, decisions, approvals, events, new scopes) is **[planned]** — not callable.
+
+List only the scopes the app actually needs. Approvals: `approvals:decide` for keys is **[planned]**; an external app cannot resume a paused run today.
+
+**Auth facts:** send `X-Huf-Api-Key` (never `Authorization: Bearer`). Key auth is implemented; a key acts as its owner and can only reduce, never extend, the owner's authority. An invalid key is not rejected on its own: it falls through to session auth and returns `401` if there is no session.
 
 **API key scope restriction:**
 - Ask: "Should this key be restricted to a specific agent, or should it work with all agents the key holder can access?"
 - Agent-restricted keys are narrower and safer for production.
 
 **Client code outline:**
-- Sketch which endpoints the app will call (e.g., `POST /huf/api/v1/agents/:agent_id/run` for synchronous execution, `POST /huf/api/v1/conversations` for managing state, etc.).
+- Sketch which real endpoints the app will call, from `references/api-v1.md` (e.g. `POST /huf/api/v1/responses` with `agent_id` and `input`, then `GET /huf/api/v1/runs/{response_id}`; `POST /huf/api/v1/conversations`). Do not invent routes.
 - Note the technology stack; `templates/target2/client.py` is the reference implementation.
 
 **Show the plan and get explicit go-ahead before proceeding to Step 3.**
@@ -227,7 +241,7 @@ The app seeder imports only prompts, tools, knowledge, agents and triggers. **Ga
 
 1. **Verify API connectivity** — Perform two sequential tests:
    - **Step 1: Router connectivity** — Call `GET /huf/api/v1/ping` (no authentication required, `requires_auth=False`). A successful response means the API endpoint is reachable. This does NOT validate the API key.
-   - **Step 2: Key authentication** — Call `GET /huf/api/v1/me` with the `X-Huf-Api-Key` header set to `$HUF_API_KEY`. A successful response returns the key's granted scopes and proves the key authenticates. Only this call is a real key test.
+   - **Step 2: Key authentication** — Call `GET /huf/api/v1/me` with the `X-Huf-Api-Key` header set to `$HUF_API_KEY`. A successful response (with `auth_type: api_key`) proves the key authenticates; it does not list scopes. Only this call is a real key test. If `/me` reports `auth_type: session` or a `401` appears, the key was not accepted (bad keys fall through to session auth).
 2. **Summarize what was created**:
    - Technology stack and framework used
    - Where the client code lives
@@ -259,6 +273,8 @@ Do not recommend blind. Instead:
 - **Do not write API keys or secrets to disk** after creation. Never echo back a key in the transcript, logs, or client code. The user generates the key in Developer Settings; the skill references it via `$HUF_API_KEY` environment variable only.
 - **Do not assume bench access.** The app may be seeded outside a bench (e.g., user clones the app repo to a different machine). Provide graceful degradation: "If you have a bench, run [command]. Otherwise, here are the files; copy them to your bench and run migrate yourself."
 - **Target 2 client code must never contain a literal key.** Every code example must use `$HUF_API_KEY` or `process.env.HUF_API_KEY` or the language equivalent. Do not provide a curl snippet like `curl -H "X-Huf-Api-Key: sk-..." ...`. Use `curl -H "X-Huf-Api-Key: $HUF_API_KEY" ...` instead.
+- **Do not plan on unavailable capabilities silently.** Anything tagged [planned], [pending: PR] or [experimental/shadow] in `references/` must be disclosed to the user with the supported alternative. The Decision Runtime (JEV) is not safely usable by apps today.
+- **Do not seed gateways, `Integration Settings`, credentials, tokens, sender ids or phone numbers.** The installer creates and enables the Gateway; its `execution_user` is never Administrator or a real person.
 - **Do not seed fabricated knowledge content.** A Knowledge Source seed file must come from real material the user supplied (a file, URL, or DocType/Data Table). If they have none yet, ship without a knowledge seed rather than inventing plausible-sounding facts.
 - **Do not guess another app's DocType or field names.** For a tool that reads/writes CRM, ERPNext, HR, etc., confirm the real DocType and field names via App & DocType Discovery (its live meta) before seeding — schemas vary by version/customization, and "well-known" ERPNext field names are not a substitute for checking the actual site.
 - **If audience = shipping to others, do not seed the builder's private material.** No personal/internal docs, credentials, org-specific references, or site-specific data in an app meant to be installed on someone else's site. The system prompt must read as generic install instructions, not "you, the builder."
@@ -278,6 +294,12 @@ Starting-point JSON schemas and code templates are located in this skill's `temp
   - `tool.json.template` — Agent Tool Function definition
   - `knowledge.json.template` — Knowledge Source definition
   - `trigger.json.template` — Agent Trigger definition
+
+- **references/** — Read-on-demand capability references (each opens with the availability tags)
+  - `gateways-and-whatsapp.md` — channels, admission policies, `execution_user`, WhatsApp modes, what not to seed
+  - `decision-runtime-jev.md` — Decision Runtime / JEV status and the supported alternative
+  - `platform-surfaces.md` — every platform surface (skills, tables, knowledge, flows, approvals, ...) per target, plus manifest rules
+  - `api-v1.md` — the real `/huf/api/v1` routes, scopes, auth and errors
 
 - **templates/target2/** — Client stubs for external apps
   - `client.py` — Python HTTP client (ping/me/agents/conversations/responses/runs)

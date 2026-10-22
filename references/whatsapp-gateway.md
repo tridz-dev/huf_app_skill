@@ -1,5 +1,8 @@
 # WhatsApp Gateway on HUF
 
+
+Availability: bridge mode, templates, drafts, management API and agent-tool flags are **[pending: tridz-dev/huf PR #806]** per [gateways-and-whatsapp.md](gateways-and-whatsapp.md); direct-mode Graph sends and Gateway admission are **[available]**. Verified against the `huf-whatsapp-harden` branch, so confirm on the target site. Summary and decision questions: [gateways-and-whatsapp.md](gateways-and-whatsapp.md).
+
 Read this when the app must receive or send WhatsApp messages. Everything here is a **post-sync setup**: the HUF app seeder only accepts `prompts, tools, knowledge, agents, triggers`, so Gateways, Integration Settings and WhatsApp Accounts are created in Desk/REST after the app is synced, never as seed folders. Never write real tokens into seed files, prompts or chat; use placeholders such as `<ACCESS_TOKEN>`.
 
 Source: huf/ai/app_seeding/seeder.py, docs/gateways/whatsapp-runbook.md

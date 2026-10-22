@@ -1,5 +1,8 @@
 # WhatsApp Templates, Template Guard and MCP Approval
 
+
+Availability: bridge mode, templates, drafts, management API and agent-tool flags are **[pending: tridz-dev/huf PR #806]** per [gateways-and-whatsapp.md](gateways-and-whatsapp.md); direct-mode Graph sends and Gateway admission are **[available]**. Verified against the `huf-whatsapp-harden` branch, so confirm on the target site. Summary and decision questions: [gateways-and-whatsapp.md](gateways-and-whatsapp.md).
+
 Read this when the app must send outside the 24h window (notifications, re-engagement), create templates, or call Meta's WhatsApp Business Tools MCP. Gateway basics (setup, tokens, window, tool actions) are in `whatsapp-gateway.md`.
 
 Template list/create/edit/sync/draft features need **bridge mode** (`frappe_whatsapp` installed and the Gateway's `whatsapp_account` set). Without it they return `bridge_unavailable`; `send_template` still works through Graph directly. Templates are created post-sync (Desk, REST, or agent draft), never as seed files, because they need a live WABA and Meta review.

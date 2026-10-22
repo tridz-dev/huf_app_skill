@@ -35,7 +35,7 @@ installed):
 | OpenCode | auto-scans `~/.claude/skills/` and `~/.agents/skills/`; also `.opencode/skills/` or `skills.paths` in `opencode.json` |
 
 No native skill loader for your tool? Copy the whole directory (not just
-`SKILL.md` — it needs `templates/` alongside it) into your project and point
+`SKILL.md` — it needs `templates/` and `references/` alongside it) into your project and point
 the agent at `SKILL.md`, or paste its contents in as a prompt.
 
 It doesn't run any magic — it just knows the HUF app patterns cold and
@@ -111,9 +111,27 @@ list-apps`, then each DocType's live meta) instead of guessing field names
 from general ERPNext/CRM knowledge — schemas vary by version and
 customization.
 
-### New: messaging, flows and media
+## Capabilities
 
-The skill can now also plan WhatsApp-connected apps: Gateway and WhatsApp
+Beyond a chat agent, the skill asks which HUF capabilities your app uses:
+gateways/messaging channels (WhatsApp, Telegram, Slack, Email), the decision
+runtime (JEV), skills, data tables, knowledge, flows, approvals, and the
+external API. For each one it reads the matching reference in
+[`references/`](references/):
+
+- [`gateways-and-whatsapp.md`](references/gateways-and-whatsapp.md) — channels, who may message the agent, the `execution_user`, and what an app must never seed (credentials, numbers)
+- [`decision-runtime-jev.md`](references/decision-runtime-jev.md) — what the Decision Runtime is and why apps shouldn't depend on it yet
+- [`platform-surfaces.md`](references/platform-surfaces.md) — every platform surface and how each app target reaches it
+- [`api-v1.md`](references/api-v1.md) — the real `/huf/api/v1` routes, scopes, auth and errors
+
+Each capability is tagged **[available]**, **[pending: PR]**,
+**[experimental/shadow]** or **[planned]**. The skill won't build on anything
+that isn't `[available]` without telling you and offering the supported
+alternative.
+
+### Messaging operations, flows and media
+
+The skill can now also plan WhatsApp-connected apps (operations depth; tagged per the availability convention above): Gateway and WhatsApp
 templates, deterministic (non-LLM) Flow Definitions, voice/audio/media, and
 model/provider keys. These are set up after sync (the seeder does not import
 them) and are documented in `references/`.
@@ -131,6 +149,7 @@ them) and are documented in `references/`.
 | `references/models-and-keys.md` | Model catalogue and provider keys |
 | `references/testing-and-pitfalls.md` | Testing and pitfall list |
 | `templates/target1/` | Seed JSON templates, `flow_definition.json.template`, `examples/` |
+| `references/gateways-and-whatsapp.md`, `decision-runtime-jev.md`, `platform-surfaces.md`, `api-v1.md` | Capability references (see Capabilities above) |
 | `templates/target2/` | External client stubs |
 
 ## Examples
@@ -153,6 +172,13 @@ them) and are documented in `references/`.
 
 - It won't run `bench new-app` — you create the Frappe app yourself, the
   skill only adds the HUF seed files into it.
+- It won't create or seed gateways, channel credentials, tokens, or phone
+  numbers — the installer sets those up; the app only ships the Agent/Flow
+  the channel routes to.
+- It won't build on capabilities that aren't shipped yet (planned, pending
+  an unmerged PR, or experimental — e.g. the decision runtime, file/voice/OCR
+  API endpoints, API-key approvals) without telling you and offering the
+  supported alternative.
 - It won't create or reveal API keys — you mint those yourself in HUF's
   Developer Settings UI.
 - It won't scaffold a Desk-page delivery — that path isn't supported by HUF
