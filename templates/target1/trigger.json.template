@@ -1,5 +1,6 @@
 {
-  "_comment": "Agent Trigger seed file. Place at <myapp>/huf/triggers/<trigger_id>.json. Keyed on trigger_name.",
+  "_comment": "Agent Trigger seed file. Place at <myapp>/huf/triggers/<trigger_id>.json. Keyed on trigger_name. 'agent' is required and must name a seeded Agent. trigger_type options: Schedule, Doc Event, Webhook, App Event, Manual. Add the fields that type needs from the Agent Trigger doctype on the target build.",
   "trigger_name": "MY_TRIGGER_NAME",
-  "description": "Description of when this trigger fires."
+  "agent": "MY_AGENT_NAME",
+  "trigger_type": "Manual"
 }

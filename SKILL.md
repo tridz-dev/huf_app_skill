@@ -42,6 +42,8 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
    Ask each reference's own "decision questions" only for the capabilities the user said yes to.
 9. **Flows, voice and media depth (Target 1 only)** — Ask: **"Should the agent talk to people on a messaging channel (WhatsApp), do any steps need to be deterministic (keyword routing, canned replies, no LLM), and does it handle voice/audio/images/documents?"** If yes to any, read the matching reference in "Reference Templates" below (WhatsApp operations -> `references/whatsapp-gateway.md`, after `references/gateways-and-whatsapp.md`; outside the 24h window -> `references/whatsapp-templates.md`; non-LLM and building, testing and publishing any flow -> `references/flows-authoring.md` (`references/flows.md` is pre-develop only; do not use it on builds that have `huf/ai/flow/`); voice/media -> `references/audio-and-media.md`; worked builds -> `references/end-to-end-recipes.md`).
 
+10. **Users, keys and spend (Target 1 only)** — Ask as one bundled question: **"Which roles will use this app, who enters the provider keys (the site owner, in the UI), and what spend limit should it run under?"** The answers go into the plan and the app README as owner decisions; you do not act on them yourself. Read `references/users-roles-permissions.md`, `references/usage-and-limits.md` and (if the agent needs grounding) `references/knowledge-and-skills.md` before planning.
+
 ### Availability tags
 
 Every capability in `references/` carries a tag. **[available]** works today on the released branch; **[pending: PR]** exists only in an unmerged PR/branch (e.g. the WhatsApp bridge, `tridz-dev/huf` PR #806); **[experimental/shadow]** built but off by default or unmerged; **[planned]** designed, not built.
@@ -230,6 +232,7 @@ The app seeder imports only prompts, tools, knowledge, agents and triggers. **Ga
 ### Target 1
 
 1. **Confirm sync** — Verify the app manifest synced and appears in the HUF App list.
+1a. **Check the seed files** — run `scripts/validate_agent_seed.py --huf-repo <huf checkout> <myapp>/huf` (read-only; stdlib only). Fix every `ERROR`; surface `WARN` lines (e.g. `allow_guest`, unresolved model placeholders) to the owner.
 2. **Test the agent** — Run one test turn with the agent (via the chat interface or API call). Confirm it responds correctly.
 2a. **If a Flow is part of the plan** — before saving it, run `scripts/validate_flow_examples.py --huf-repo <huf checkout> <flow.json>` (needs `pip install jsonschema` in a clean venv; do not install pip's `frappe` package, it breaks the script; indicative: verify against the target build, `graph_ir.schema.json` and `validate_flow`, at build time); then follow `references/flows-authoring.md` (save as Draft, validate in publish mode, TEST run, ask the owner before publish or any real run). Never put secrets in a flow.
 2b. **If a Gateway/flow was set up** — check gateway health (see `references/whatsapp-gateway.md`), dry-run each Flow Definition with a sample event, then do a live check following `references/testing-and-pitfalls.md` (fake graph, then `tools/wa_live_smoke.py` on an isolated site). Confirm exactly one reply per inbound event.
@@ -282,6 +285,7 @@ Do not recommend blind. Instead:
 - **Do not guess another app's DocType or field names.** For a tool that reads/writes CRM, ERPNext, HR, etc., confirm the real DocType and field names via App & DocType Discovery (its live meta) before seeding — schemas vary by version/customization, and "well-known" ERPNext field names are not a substitute for checking the actual site.
 - **If audience = shipping to others, do not seed the builder's private material.** No personal/internal docs, credentials, org-specific references, or site-specific data in an app meant to be installed on someone else's site. The system prompt must read as generic install instructions, not "you, the builder."
 
+- **Never, without explicit owner approval in chat (per action):** write or print an AI Provider `api_key` (Password field), a pgvector password, or any gateway/WhatsApp/Telegram secret; call `stash_secret` (gateway credential entry only, `huf/ai/secrets/__init__.py:55`); create or change a User, Huf User Role or Frappe User Permission; create or update a Huf Role or grant any capability; grant System Manager or Huf Admin, or the capabilities `roles.manage`, `users.*`, `developer.keys.manage`, `execution.*`, `code_execution.run`, `ssh.*`, `docker.run`, `system.*`; change Agent Settings spend cap or limits, or Execution Profiles; set `allow_guest` to 1. Keys and passwords are a human step in the UI: never ask for one in chat and never unmask a Password field with `get_password`. Details: `references/users-roles-permissions.md`, `references/models-and-keys.md`, `references/usage-and-limits.md`, `references/knowledge-and-skills.md`.
 ---
 
 ## Reference Templates
@@ -292,7 +296,7 @@ Starting-point JSON schemas and code templates are located in this skill's `temp
   - `README.md` — seed directory layout, sync commands, placeholder conventions
   - `AGENT_CONFIG_REFERENCE.md` — indexed table of every capability-relevant `Agent` field (vision, image gen, STT/TTS, context/summarization, reasoning, caching, memory, permissions, etc.)
   - `manifest.json.template` — HUF App manifest
-  - `agent.json.template` — Agent record
+  - `agent.json.template` — Agent record (model fields are `<AI_PROVIDER>` / `<AI_MODEL_NAME>` placeholders; `allow_guest` is 0)
   - `prompt.json.template` — Agent Prompt record
   - `tool.json.template` — Agent Tool Function definition
   - `knowledge.json.template` — Knowledge Source definition
@@ -315,6 +319,7 @@ Starting-point JSON schemas and code templates are located in this skill's `temp
   - `flow_definition.json.template` — Flow Definition record; read when creating a flow post-sync
   - `examples/whatsapp_triage_flow.json` — working non-LLM triage flow; read when building keyword routing
   - `examples/flows/*.json` — six validated flows (CRM follow-up with approval, ERP order routing, webhook to Sheets, scheduled digest, doc-event reaction, gateway reply)
+  - `scripts/validate_agent_seed.py [--huf-repo <huf checkout>] <seed dir or files>` — read-only check of agent/prompt/tool/knowledge/trigger seeds: keys vs doctype JSON, linked seed names, key-like strings, `allow_guest`
   - `scripts/validate_flow_examples.py --huf-repo <huf checkout> <file>` — validate any flow JSON offline against the Huf schema and validator before saving
 
 - **references/** — read only the file the Step 1 answers need
@@ -324,7 +329,10 @@ Starting-point JSON schemas and code templates are located in this skill's `temp
   - `flows-authoring.md` — read BEFORE creating any Flow Definition: triggers, all node types, value forms, draft vs publish validation, whitelisted API, test-run simulation, debugging, safety rules, checklist
   - `end-to-end-recipes.md` — read for full worked builds (triage flow, agent with voice replies, template notification) and known gaps
   - `audio-and-media.md` — read when handling voice, audio, images or documents inbound/outbound
-  - `models-and-keys.md` — read when choosing STT/TTS/image models and provider keys
+  - `models-and-keys.md` — read when choosing STT/TTS/image models and provider keys; which AI Model fields you may read and who writes what
+  - `users-roles-permissions.md` — read when the app needs users, roles or capabilities: default roles, owner-run commands, what an agent may and may not do
+  - `usage-and-limits.md` — read when the owner cares about cost: run budget, per-agent limits, Agent Run cost, analytics
+  - `knowledge-and-skills.md` — read when the agent needs knowledge or skills: SQLite FTS seed, verifying with `test_search`, uploads, prompt versioning
   - `testing-and-pitfalls.md` — read before verifying or when something misbehaves (fake graph, live smoke, pitfall list)
 
 Reference these when scaffolding; do not invent structures.

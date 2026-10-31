@@ -1,7 +1,10 @@
 {
-  "_comment": "Agent seed file. Place at <myapp>/huf/agents/<agent_id>.json. Keyed on agent_name.",
+  "_comment": "Agent seed file. Place at <myapp>/huf/agents/<agent_id>.json. Keyed on agent_name. Replace <AI_PROVIDER> and <AI_MODEL_NAME> with names the owner picked from the target site's AI Provider / AI Model lists (or drop both fields to use the site default); the seed fails if a linked name does not exist. Never put keys here.",
   "agent_name": "MY_AGENT_NAME",
   "instructions": "You are a helpful assistant that...",
+  "provider": "<AI_PROVIDER>",
+  "model": "<AI_MODEL_NAME>",
+  "allow_guest": 0,
   "tools": [
     "Tool Name 1",
     "Tool Name 2"
