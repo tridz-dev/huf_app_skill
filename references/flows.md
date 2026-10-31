@@ -133,7 +133,7 @@ Source: huf/ai/flow_create_doc.py, huf/ai/flow_engine.py (`_exec_doc_create`)
   `huf.ai.flow_engine.run_flow` (one run per event; redelivery does not start a second).
 - Payload (read as `input.<field>`): `gateway_event, gateway, provider, sender_id, wa_id, conversation_id, thread_id, message_id,
   message, text, message_type, attachments[], reply_to_message_id, interactive_reply{id,title}`.
-- Entry node: use `trigger.webhook` (there is no gateway trigger node type).
+- Entry node: use `trigger.whatsapp`, `trigger.telegram` or `trigger.gateway` (see flows-authoring.md 11a); a route-bound flow may also start from `trigger.webhook`.
 - Reply: when a Gateway run succeeds the engine takes the final `output` node's value (or `context.reply`; for a dict its
   `reply`, `text` or `message`) and sends ONE reply through the normal WhatsApp pipeline (formatting, split, opt-out check,
   `voice_reply_mode`). Empty text or the `<NO_REPLY>` sentinel sends nothing. A failed run marks the Gateway Event Failed; on current builds a plain "Something went wrong. Ref <event>." notice is
