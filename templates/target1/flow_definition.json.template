@@ -1,4 +1,5 @@
 {
+  "_note": "Indicative: verify against the target build (graph_ir.schema.json, validate_flow) at build time.",
   "doctype": "Flow Definition",
   "flow_id": "<FLOW_ID>",
   "flow_name": "<FLOW_NAME>",

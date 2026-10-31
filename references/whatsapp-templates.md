@@ -111,9 +111,9 @@ A deterministic flow has no LLM. Use a `tool.call` node whose `tool_id` is the H
                       "idempotency_key": "order-A-1042-shipped"}}}
 ```
 
-Rules: the saved `tool.call` config schema allows only `tool_id`, `input`, `timeout_ms` and `approved` (anything else is rejected), so the Gateway cannot be named in the node. The `whatsapp` tool uses the Gateway of the Gateway Event that started the flow run (gateway trigger); a flow started any other way (cron, doc event) gets `gateway_context_required`. `to` defaults to the triggering sender; any other number is subject to `agent_recipient_scope` and caps. Always set `idempotency_key` for retried or repeated sends. Node field names are listed in `flows.md`.
+Rules: the saved `tool.call` config schema allows only `tool_id`, `input`, `timeout_ms` and `approved` (anything else is rejected), so the Gateway cannot be named in the node. The `whatsapp` tool uses the Gateway of the Gateway Event that started the flow run (gateway trigger); a flow started any other way (cron, doc event) gets `gateway_context_required`. `to` defaults to the triggering sender; any other number is subject to `agent_recipient_scope` and caps. Always set `idempotency_key` for retried or repeated sends. Node field names are listed in `flows-authoring.md` section 5 (indicative: verify against the target build).
 
-Source: huf/ai/flow_engine.py, huf/ai/tests/test_flow_gw33_gateway_send.py
+Source: huf/ai/flow/engine.py, huf/ai/tests/test_flow_gw33_gateway_send.py
 
 ## 7. Fallback template for closed windows
 
@@ -131,4 +131,4 @@ Re-syncing keeps the admin's `requires_approval` choice. Never mark a send/mutat
 
 **Meta WhatsApp Business Tools MCP status (observed 2026-10-22).** The Meta app dashboard shows a "WhatsApp Business Tools MCP" banner. OAuth/consent/token exchange was verified with the real Meta server on 2026-10-22; the WhatsApp Business Tools MCP server returned **401 "restricted to certain users"** for the tested account (beta rollout). Treat it as unavailable until a call succeeds for your account: do not build an app that depends on it, and use HUF's own `whatsapp` tool and management API instead. If it becomes available, add it as an MCP Server, sync, keep approval on for non-read-only tools, and verify with one read-only call first.
 
-Source: huf/ai/mcp_client.py, huf/ai/flow_engine.py
+Source: huf/ai/mcp_client.py, huf/ai/flow/engine.py

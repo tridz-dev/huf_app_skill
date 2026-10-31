@@ -1,9 +1,11 @@
 # Flows: authoring guide for agents (create, validate, publish, run, debug)
 
+> Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Every table, number, name and string below was read from one Huf branch and can drift.
+
 Read this when you must BUILD a Flow Definition, not just describe one. It is written against the Huf integration
 code under `huf/ai/flow/` (package `huf.ai.flow.*`, branch `fix/flow-ui-schema-alignment` and later). The older
 `references/flows.md` was written against `pre-develop` (`huf.ai.flow_api`, `flow_engine`); where the two differ, this file
-wins for any Huf checkout that has the `huf/ai/flow/` package. When unsure, read the source named in "Check" lines.
+wins for any Huf checkout that has the `huf/ai/flow/` package (the older file is marked pre-develop-only). When unsure, read the source named in "Check" lines.
 
 Source of truth in the huf repo: `huf/ai/graph/graph_ir.schema.json` (`$defs/FlowGraph`), `docs/flow/FIELD_CONTRACT.md`,
 `docs/flow/USER_GUIDE.md`, `docs/flow/CONDITION.md`, `docs/flow/DATA_INPUT.md`, `huf/ai/flow/api.py`, `huf/ai/flow/engine.py`.
@@ -16,6 +18,8 @@ owner (never Guest). Statuses of a Flow Definition: `Draft`, `Active` (published
 include Queued, Running, Waiting Approval, Waiting User, Waiting Code, Success, Failed, Cancelled (Success/Failed/Cancelled are final).
 
 ## 2. Triggers (the `entry` node)
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time._
+
 | type | config | notes |
 |---|---|---|
 | `trigger.webhook` | `method` GET or POST, `secret` (32-256 chars) | Caller sends header `X-Huf-Secret`. `?secret=` is NOT accepted. Name the flow with `?flow_id=`, header `X-Huf-Flow-Id` or argument. Endpoints: `/api/method/huf.ai.flow.api.flow_webhook` and `flow_webhook_clean`. Only Active flows answer; unknown flow, draft flow and wrong secret all give the same 403; wrong HTTP method 405; more than 60 calls a minute per caller address gives 429. Runs are queued and always Real. |
@@ -25,6 +29,8 @@ include Queued, Running, Waiting Approval, Waiting User, Waiting Code, Success, 
 A Gateway (WhatsApp, Telegram, ...) can route to a Flow; there is no gateway trigger node. Use `trigger.webhook` as the entry (see 11).
 
 ## 3. IR shape
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers keys, id regex and policy ceilings._
+
 Top level (no other keys; there is NO `edges` array): `schema_version` `"1.0.0"`, `profile` `"flow"`, `fingerprint` (64 hex chars,
 `"0"*64` is fine), `entry` (node id, or array of ids when there are several triggers), `nodes` (min 1), `contract`.
 Node: `{id, type, config, next?, on_error?}`. `id` matches `^[a-zA-Z_][a-zA-Z0-9_]*$` (no `-` or `.`), max 64, unique. `config`
@@ -42,6 +48,8 @@ foreach iterations 5,000, external calls 2,000, writes 500, wall time 15 minutes
 a flow with `http_request` needs `"http": ["http_request"]`; a `doc.create` needs the doctype in `write` AND `max_writes` >= 1.
 
 ## 4. Value forms
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers the expression function list and the 500-char limit._
+
 A `Value` is a literal; a reference `{"$from": "<path>"}`; a template `{"$template": "Hi {name}", "vars": {"name": <Value>}}`;
 or an array/object of Values (an object may not itself contain `$from`).
 Reference path: `input`, `trigger`, `row`, `foreach.item`, `foreach.index`, or an earlier node id, then `.key` or `[n]`
@@ -58,6 +66,8 @@ attributes (`input['amount'] > 100`), operators `== != < <= > >= in not in and o
 lists (`"ab" * 3` is refused); integers stay below 10**18.
 
 ## 5. Node types
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers node config keys, the transform op list, state TTL/size, `doc.create` caps, `code.run` 64 KB and the built-in tool names/args below._
+
 | type | config (`*` required) | output / routing |
 |---|---|---|
 | `agent.run` | `agent`* (Agent name), `prompt`* with `{name}` placeholders, `prompt_bindings` name -> Value | agent reply text. `{{`/`}}` are literal braces. |
@@ -91,12 +101,18 @@ never try to fill credentials yourself. Code Execution tools (`run_python`) are 
   required text, named `approver_users` real enabled users (a run does not re-check people; save and publish do).
 - Read what is left at any time: `huf.ai.graph.validation.flow_validation.validate_flow_definition(flow_id, mode)` (whitelisted, mode `draft` or `publish`)
   returns `{ok, structure_ok, finished, errors, issues}` with plain sentences naming the step and field.
-- Offline check before you save: `python3 scripts/validate_flow_examples.py --huf-repo <huf checkout> my_flow.json`
+- Offline check before you save (needs `jsonschema` in a clean venv, see `scripts/validate_flow_examples.py`; do not install pip's `frappe` package, it breaks the script): `python3 scripts/validate_flow_examples.py --huf-repo <huf checkout> my_flow.json`
   (jsonschema against `$defs/FlowGraph`, then the repo's `validate_flow_graph` in publish mode, no bench needed).
 
 ## 7. Create, save, publish via the whitelisted API
-All are `POST /api/method/<path>` (or `frappe.call`). Permission is the Frappe permission on Flow Definition / Flow Run (roles System Manager,
-Huf Manager; Huf User and Huf Viewer can only read Flow Definitions); Huf Roles can grant it through capabilities `flows.create` / `flows.manage`.
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers API paths, arguments and capability names._
+
+All are `POST /api/method/<path>` (or `frappe.call`). Permission is the Frappe permission on Flow Definition / Flow Run (doctype JSON):
+- System Manager and Huf Manager: read/write/create on Flow Definition and on Flow Run; they can save, publish, unpublish, run, cancel and clone flows.
+- Huf User: read only on Flow Definition (cannot save, publish or cancel), but read/write/create on Flow Run, so `run_flow` works on every flow they can read (`api.py:313-337`: Flow Run create plus read on that flow). They can read runs of flows they can read.
+- Huf Viewer: read only on Flow Definition.
+- `mark_flow_run_failed` is System Manager only; deciding an approval follows the step's role/users (see 10).
+Huf Roles can grant the rest through capabilities `flows.create` / `flows.manage`.
 | call | args | does |
 |---|---|---|
 | `huf.ai.flow.api.save_flow_definition` | `flow_id`, `definition_json` (object or string) | Creates a Draft (name = `flow_id`) or updates and bumps `version`. Returns `{flow_id, version, warnings, unfinished}`. Needs write permission. |
@@ -109,10 +125,11 @@ Huf Manager; Huf User and Huf Viewer can only read Flow Definitions); Huf Roles 
 | `huf.ai.flow.api.get_pending_approvals` | `limit` | approvals the caller may decide |
 | `huf.ai.flow.api.approve_flow_run` / `reject_flow_run` | `flow_run_id`, `comment` | decide an approval |
 | `huf.ai.flow.api.resume_flow_run` | `flow_run_id`, `input` | continue a run waiting for input |
-| `huf.ai.flow.runs.actions.cancel_flow_run`, `huf.ai.flow.api.mark_flow_run_failed` | `flow_run_id` | stop a run; mark a stale one failed (System Manager) |
+| `huf.ai.flow.runs.actions.cancel_flow_run` | `flow_run_id` | stops a run that is still Queued only (a run a worker has picked up, or any other status, is refused). Needs edit (write) permission on THAT flow and write on the run (`runs/actions.py:15-19`). |
+| `huf.ai.flow.api.mark_flow_run_failed` | `flow_run_id` | System Manager only. Fails a Queued/Running run that has not changed for 15 minutes (`STALE_RUN_MINUTES`, `api.py:40`); a younger or finished run is refused. |
 | `huf.ai.flow.listing.clone.clone_flow`, `create_flow_from_template` | `flow_id`; `name, definition_json, description, category` | new Draft with its own fresh secret and a "needs setup" list |
 | `huf.ai.flow.listing.tools.list_flow_tools` | none | tools a step may call, each with `effect` reads/changes/sends |
-| `huf.ai.flow.testrun.step_test_api.test_step` | `flow_id`, `node_id`, `sample_input` | run ONE step without creating a run (editors only; 20 a minute) |
+| `huf.ai.flow.testrun.step_test_api.test_step` | `flow_id`, `node_id`, `sample_input` | run ONE step without creating a run (editors only; 20 a minute, 30 s per step). A slow step (AI, web reads, loops) returns `{"status": "running", "token": ...}` at once: poll `huf.ai.flow.testrun.step_test_api.get_step_test_result(token)` until it is not `running`; only the person who started the test can read it and the answer is kept 5 minutes (`step_test.py:40`) |
 | `huf.ai.flow.api.get_node_schemas` | none | config schema per node type |
 Agent tools `run_flow`, `get_flow_run`, `resume_flow_run`, `approve_flow_run` (`huf/ai/flow/tools.py`) always start REAL runs: no test mode.
 Flow Definition `status` can also be set through the doc API, but prefer `publish_flow`.
@@ -124,7 +141,65 @@ Capabilities (checked on top of document permissions):
 - `flows.execute_code` (System Manager, Huf Admin): needed to save or change a `code.run` step, even as a draft.
 If you lack one, tell the owner which; do not look for a way around it.
 
+### Request/response examples
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Placeholders only: `<SITE_URL>`, `<API_KEY>`, `<API_SECRET>` (keys of a user who may write Flow Definitions), `<FLOW_ID>`, `<FLOW_RUN_ID>`. Frappe wraps every result in `{"message": ...}`._
+```
+# save_flow_definition (POST; definition_json may be an object or a JSON string)
+curl -sS -X POST "<SITE_URL>/api/method/huf.ai.flow.api.save_flow_definition" \
+  -H "Authorization: token <API_KEY>:<API_SECRET>" -H "Content-Type: application/json" \
+  -d "$(jq -n --slurpfile d my_flow.json '{flow_id:"<FLOW_ID>",definition_json:$d[0]}')"
+# -> {"message":{"flow_id":"<FLOW_ID>","version":1,"warnings":[],"unfinished":[]}}
+
+# validate (publish mode): ok must be true before publishing
+curl -sS -X POST "<SITE_URL>/api/method/huf.ai.graph.validation.flow_validation.validate_flow_definition" \
+  -H "Authorization: token <API_KEY>:<API_SECRET>" -H "Content-Type: application/json" \
+  -d '{"flow_id":"<FLOW_ID>","mode":"publish"}'
+# -> {"message":{"ok":true,"structure_ok":true,"finished":true,"errors":[],"issues":[]}}
+
+# run_flow in test mode (synchronous; sends and changes are simulated)
+curl -sS -X POST "<SITE_URL>/api/method/huf.ai.flow.api.run_flow" \
+  -H "Authorization: token <API_KEY>:<API_SECRET>" -H "Content-Type: application/json" \
+  -d '{"flow_id":"<FLOW_ID>","payload":{"name":"Test Person"},"mode":"test"}'
+# -> {"message":{"flow_run_id":"<FLOW_RUN_ID>","status":"Success","current_node_id":"..."}}
+
+# get_flow_run (GET or POST)
+curl -sS "<SITE_URL>/api/method/huf.ai.flow.api.get_flow_run?flow_run_id=<FLOW_RUN_ID>" \
+  -H "Authorization: token <API_KEY>:<API_SECRET>"
+# -> {"message":{"flow_run_id":"<FLOW_RUN_ID>","status":"Success","run_mode":"test","last_error":null,
+#      "context_json":{"__node_outputs__":{"<node_id>":{...}}},"waiting":{},"approval_card":null,"outcome":{...},...}}
+```
+The values shown in the responses are illustrative; field names come from `api.py` (`save_flow_definition`, `run_flow`, `get_flow_run`)
+and `flow_validation.py` (`validate_flow_definition`).
+
+## 7a. Discovery helpers (read-only, whitelisted)
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time._
+Ask the site instead of guessing. All need a logged-in user who can read Flow Definitions unless noted.
+| call | args | returns |
+|---|---|---|
+| `huf.ai.flow.api.get_trigger_doctypes` | none | `[{name, label, group, module}]`: doctypes the caller may read and a doc-event trigger may use |
+| `huf.ai.flow.api.get_trigger_doctype_info` | `doctype` | `{doctype, is_submittable}` (decides whether `on_submit`/`on_cancel` can fire) |
+| `huf.ai.flow.api.get_site_timezone` | none | IANA name of the site time zone (the default for `trigger.schedule`) |
+| `huf.ai.flow.api.get_approver_roles` | none | `[{name, group}]` roles a `human.approval` step may name (`group` Huf or Other) |
+| `huf.ai.flow.api.get_flow_step_labels` | `items` (list of `{flow_run, flow_node_id}`) | readable "Flow: name > step title" labels for Agent Runs made by flow steps (needs Flow Run read) |
+| `huf.ai.flow.testrun.step_test_api.list_recent_documents` | `flow_id`, `node_id` | up to 5 recent documents for a data trigger step (editors of the flow) |
+| `huf.ai.flow.testrun.step_test_api.get_document_sample` | `flow_id`, `node_id`, `docname` | the trigger payload a real document would produce, for `test_step` or a test run (editors of the flow) |
+Also `huf.ai.flow.listing.tools.list_flow_tools` (tool ids) and `huf.ai.flow.api.get_node_schemas` (see the table above).
+
+## 7b. Shipping flows with an app
+- Flows are NOT seeded: the app seeder takes prompts, tools, knowledge, agents and triggers only. Ship the flow JSON as a file in the app and deliver it
+  after sync with a post-sync script (for example a patch or `after_install`/`after_migrate` hook) that calls `huf.ai.flow.api.save_flow_definition`
+  (as a user who may write Flow Definitions), then leaves it as a Draft for the owner to review, test and publish.
+- The webhook `secret` is generated per site at install time (32+ random characters, written into the definition by the script, never committed and never
+  shipped as a literal). `clone_flow` and `create_flow_from_template` also generate a fresh secret.
+- Approval roles: the roles named in `human.approval` must exist on the target site. `get_approver_roles` lists what is available; check it in the script
+  before saving. Publish itself verifies `approver_users` (real, enabled users) and the capabilities in section 7, not role names.
+- Agents, tools, channels, spreadsheet ids and doctypes the flow names must exist on the site (and `huf_flow_create_doc_doctypes` must allow `doc.create`
+  doctypes), so create or check them first. The script should report anything missing instead of publishing.
+
+
 ## 8. `code.run`
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers the code switches and the `Flow Scratch` profile values._
+
 Hidden unless BOTH switches are on: the server switch (site config `huf_python_execution_enabled`, set with `bench set-config` by the server admin) and
 `Agent Settings.allow_code_in_flows` (only a System Manager can change it). Publishing also needs `flows.publish_sensitive` and `flows.execute_code`, an
 enabled Execution Profile that is not `Never Allow` or `Shared Directory`, and `timeout_s` within the profile's wall limit. At run time the flow owner must
@@ -134,6 +209,8 @@ code steps per run; not allowed inside a loop body. Status shows Waiting Code wh
 Check status with `huf.ai.flow.code_node.get_code_flow_status`. Do not add code steps unless the owner asked and both switches are on.
 
 ## 9. Test run: what is simulated
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers the reads/changes/sends classification._
+
 `run_flow(flow_id, payload, mode="test")` starts a Test run. Every tool is classified `reads`, `changes` or `sends` (`huf/ai/flow/testrun/effects.py`):
 - `reads` run for real (Slack/GitHub/Sheets/Drive/Gmail reads, record lookups, `http_request` GET and HEAD only).
 - `changes` (record create/update, Sheets write/create, calendar, GitHub create, other `http_request` methods) and `sends` (email, Slack/Discord/
@@ -146,11 +223,13 @@ Check status with `huf.ai.flow.code_node.get_code_flow_status`. Do not add code 
 Test runs are the default first step for any new flow. They still read real data and cost model tokens.
 
 ## 10. Reading and debugging runs
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers the error strings and timings._
+
 `get_flow_run` -> `status`, `last_error`, `current_node_id`, `context_json.__node_outputs__["<node_id>"]` (a failed node's output is
 `{"status": "failed", "error": "<reason>"}`), `waiting`, `approval_card`, `outcome`. Approvals: a run in `Waiting Approval` is decided with
 `approve_flow_run` / `reject_flow_run` by someone with the role or in `approver_users` (a System Manager always can). Overdue approvals route along
 `timeout_next` (checked at least every minute) or fail the run. Exactly one decision wins; a second gets "already decided".
-Stale runs: Queued/Running with no change for 30 minutes and no live lock are failed by a sweeper ("Run did not complete (worker stopped)").
+Stale runs: a System Manager can mark a Queued/Running run failed by hand after 15 minutes without change (`mark_flow_run_failed`, `STALE_RUN_MINUTES`, `api.py:40`). A sweeper that runs every 5 minutes fails them automatically after 30 minutes when no worker holds the run lock (`STALE_RUN_SWEEP_MINUTES`, `engine.py:303`); waiting runs are left alone. `cancel_flow_run` only stops a run that is still Queued, never a Running or waiting one.
 | Message or symptom | Cause and fix |
 |---|---|
 | Save refused: "This flow cannot be saved yet" + sentence | Structure error. Common: id with `-`, `next` on a `condition`/`output`, unknown config key, `"next": null`, missing `secret`, `edges` array, `schema_version` as number. Fix the named step. |
@@ -164,9 +243,11 @@ Stale runs: Queued/Running with no change for 30 minutes and no live lock are fa
 | doc.create refused | Doctype not in `huf_flow_create_doc_doctypes`, not in `permission_envelope.write`, `max_writes` is 0, or the owner lacks create permission. |
 | "This approval has expired" | Decided after `timeout_ms`; the timeout path owns it. |
 | Agent step fails naming a provider | The AI provider has no working key; the owner must add it. |
-| Run stays Running | Worker stopped or queue backlog; use `mark_flow_run_failed` after 15 minutes (System Manager) and check workers. |
+| Run stays Running | Worker stopped or queue backlog; a System Manager can use `mark_flow_run_failed` after 15 minutes; otherwise the sweep fails it after 30. Check workers either way. A Queued run that should not start can be stopped with `cancel_flow_run`. |
 
 ## 11. Messaging (WhatsApp, Telegram) in what exists today
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Covers the gateway payload fields._
+
 - Tools registered: `whatsapp` (`huf.ai.tools.whatsapp.handle_action`; actions include send_message, send_media, send_buttons, send_list,
   send_template, list_messages ...) and `telegram` (`huf.ai.tools.telegram.handle_action`; send_message, send_photo, send_document ...; text goes in `text`),
   plus `telegram_admin`. Both are `sends` for test runs. They work only inside a gateway conversation (the gateway is bound from the run's Gateway Event,
@@ -181,6 +262,8 @@ Stale runs: Queued/Running with no change for 30 minutes and no live lock are fa
 Example: `gateway_reply_flow.json` (works for either provider because it only uses the output reply).
 
 ## 12. Limits
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time._
+
 Webhook 60 calls/minute per caller address. `contract.limits` ceilings in 3. Pinned sample (`_sample`) at most 8 KB, secret-looking keys hidden. Step test: 20 a minute,
 30 s per step, 64 KB output. State value 16 KB, key 140 chars. `doc.create` 30 fields, 5,000 chars each. Code 64 KB, at most 20 code steps per run. Condition expression 500
 chars. Hop budget per run 100. Web requests: public addresses only (every resolved address and each redirect hop is checked), response body 64 KB.
@@ -211,6 +294,8 @@ chars. Hop budget per run 100. Web requests: public addresses only (every resolv
 - [ ] Test run succeeded; simulated summaries read correctly; owner approved before publish.
 
 ## 15. Examples (all in `templates/target1/examples/flows/`, all validated)
+_Indicative: verify against the target build (`graph_ir.schema.json`, `validate_flow`) at build time. Tool ids, agent names, roles, channels and doctypes in the examples are site-specific placeholders._
+
 | file | trigger | shows |
 |---|---|---|
 | `crm_lead_followup.json` | webhook | `agent.run` draft, `human.approval` with details, Gmail send, Slack note, outcomes |

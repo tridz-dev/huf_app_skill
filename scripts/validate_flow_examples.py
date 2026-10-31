@@ -9,7 +9,10 @@ With no files it checks templates/target1/examples/flows/*.json.
 Each file is either a bare definition (schema_version/profile/nodes/...) or a record with
 a "definition_json" key (like flow_definition.json.template).
 
-Stage 1 (always): jsonschema (Draft 2020-12) against $defs/FlowGraph. Needs `pip install jsonschema`.
+Stage 1 (always): jsonschema (Draft 2020-12) against $defs/FlowGraph.
+  Dependency: `pip install jsonschema` in a clean venv. Do NOT `pip install frappe` there: the PyPI `frappe`
+  package shadows the stub below and breaks stage 2.
+  Indicative: verify against the target build (graph_ir.schema.json, validate_flow) at build time.
 Stage 2 (only with --huf-repo): the repo's own validate_flow_graph in publish mode, offline.
   `frappe` is replaced by a stub when it is not installed; tool classification is faked
   (http_request counts as web, run_python as code), so no bench or database is needed.

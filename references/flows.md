@@ -1,6 +1,9 @@
 # Flows: deterministic (non-LLM) workflows
 
-> Written against `pre-develop`. For the current `huf/ai/flow/` code (webhook secret, triggers, approvals, test runs, publish rules, whitelisted API names) read `references/flows-authoring.md` first; it wins on any conflict.
+> **PRE-DEVELOP ONLY. This file does not apply to builds that have `huf/ai/flow/`; use `references/flows-authoring.md`.**
+> It describes the older `pre-develop` engine (`huf.ai.flow_api`, `flow_engine`). On any current build the module names, API
+> paths, condition syntax, statuses, approval and cancel behaviour below are wrong or incomplete. Only read on if the target
+> Huf checkout has no `huf/ai/flow/` directory.
 
 Read when Step 1 says "a WhatsApp/webhook/doc-event workflow with fixed rules" (menus, keyword triage, hand-off rows,
 templated replies) and an LLM is not needed. Flows are NOT seedable: the app seeder only takes
@@ -37,14 +40,14 @@ Values (`Value`) may be a literal, `{"$from": ...}`, `{"$template": ..., "vars":
 | type | config | output / routing |
 |---|---|---|
 | `trigger.webhook` | `method`: GET or POST | entry marker. Also the entry used by every gateway-triggered test flow. |
-| `trigger.schedule` | `cron` (string) | entry marker; fire it via `flow_api.set_flow_trigger` |
+| `trigger.schedule` | `cron` (string) | entry marker; schedule and doc-event are trigger nodes, nothing else is needed to fire them |
 | `trigger.doc-event` | `doctype`, `event` in after_insert, on_update, on_submit, on_cancel, on_trash | entry marker |
 | `trigger.unset` | `{}` | placeholder; a Flow with an unset trigger cannot be Active |
 | `tool.call` | `tool_id` (literal Agent Tool Function name), `input` (object of Values), `timeout_ms?`, `approved?` | tool result |
 | `transform` | `op` (20 ops below), `input` (object of Values) | op result (string, bool, list...) |
 | `condition` | `expression`, `on_true`, `on_false` (node ids); no `next` | routes; see Conditions |
 | `foreach` | `items` ($from ref), `body` (node ids), `max_iterations`, `on_item_error` fail/skip, `collect` ($from ref), `item_var?`, `index_var?` | list |
-| `parallel` | `branches` (arrays of node ids), `join` const "all", `max_parallel_calls?` | after all branches |
+| `parallel` (pre-develop only; not a Flow node type on current builds) | `branches` (arrays of node ids), `join` const "all", `max_parallel_calls?` | after all branches |
 | `validate` | `assertions[]` each `{expression, code, message}` | passes or fails run |
 | `output` | `value` (Value); no `next` | final value; for a gateway run this is the reply text |
 | `agent.run` | `agent`, `prompt`, `prompt_bindings?` | agent response (LLM; not deterministic) |
@@ -102,19 +105,14 @@ Source: huf/ai/graph/transforms.py
 Source: huf/ai/graph/templates.py, huf/ai/graph/expressions.py, huf/ai/graph/graph_ir.schema.json
 
 ## Conditions
-`condition.config.expression` is a restricted Python expression (<= 500 chars) evaluated against `context`:
-subscripts, literals, `== != < <= > >= in not in is`, `and or not`, `+ - * %`. No calls, no attributes.
-Read earlier node outputs as `context["outputs"]["<node_id>"]`, e.g. `context["outputs"]["has_refund"] == True`,
-`context["outputs"]["get_state"]["found"]`, `context["outputs"]["num"] != None`. Flat run context keys are also on `context`
-(a flat key literally named `outputs` wins). Compare booleans with `== True`; use `!= None` for "regex matched".
-The result is coerced to a truthy/falsy bool; the node routes to `on_true` or `on_false`.
-
-Source: huf/ai/flow_engine.py (`_expression_context`), huf/ai/flow_eval.py, docs/architecture/flow-text-state-create-doc.md
+Superseded. Expression syntax (subscripts such as `input['amount'] > 100`, only `number/lower/startswith/endswith` calls, 500 chars)
+is defined in `references/flows-authoring.md` section 4. The older `context["outputs"][...]` form described for pre-develop
+is not valid on current builds.
 
 ## State (remember something between messages)
 `state.get/set/delete` use the `Flow State` doctype (`flow_id, state_key, value_json, expires_at`), keyed to the running flow only
 (config cannot name another flow). Key 1..140 chars (string or int); value JSON <= 16 KB; TTL default 24 h, max 30 days
-(`ttl_seconds` 1..2,592,000). Expired rows read as missing and are purged lazily and by the daily `huf.ai.flow_state.purge_expired`.
+(`ttl_seconds` 1..2,592,000). Expired rows read as missing and are purged lazily.
 Doctype roles: System Manager, Huf Manager; nodes access it internally. Key per sender: `{"$template":"wa:{s}","vars":{"s":{"$from":"input.sender_id"}}}`.
 
 Source: huf/ai/flow_state.py, huf/huf/doctype/flow_state/flow_state.json
@@ -138,8 +136,8 @@ Source: huf/ai/flow_create_doc.py, huf/ai/flow_engine.py (`_exec_doc_create`)
 - Entry node: use `trigger.webhook` (there is no gateway trigger node type).
 - Reply: when a Gateway run succeeds the engine takes the final `output` node's value (or `context.reply`; for a dict its
   `reply`, `text` or `message`) and sends ONE reply through the normal WhatsApp pipeline (formatting, split, opt-out check,
-  `voice_reply_mode`). Empty text or the `<NO_REPLY>` sentinel sends nothing. A failed run marks the Gateway Event Failed and
-  sends no apology from the flow path. A run that ends in a non-output node replies with nothing unless `context.reply` is set.
+  `voice_reply_mode`). Empty text or the `<NO_REPLY>` sentinel sends nothing. A failed run marks the Gateway Event Failed; on current builds a plain "Something went wrong. Ref <event>." notice is
+  also sent (see `flows-authoring.md` section 11). A run that ends in a non-output node replies with nothing unless `context.reply` is set.
 - Extra messages mid-flow: send them with a `tool.call` to the `whatsapp` tool (e.g. `send_template`, `send_buttons`); the gateway
   is bound from the run's own Gateway Event, never from tool input; free-form sends obey the 24 h window and recipient scope.
 - Doc-event and schedule runs have no Gateway Event, so a `tool.call` to the WhatsApp tool there fails closed with
@@ -151,36 +149,27 @@ Source: huf/ai/gateway_service.py (`_flow_trigger_payload`, `_start_flow_for_eve
 - Gateway runs: Gateway `execution_user` (least-privileged, never Administrator) is the session user. The Flow Run is created on the
   gateway's behalf, so that user needs no Huf User role to start it, but `doc.create` and `tool.call` then run as it:
   grant it create rights on the target doctype (e.g. ToDo) or the node fails with `permission denied`.
-- REST: `huf.ai.flow_api.save_flow_definition` needs Flow Definition write; `run_flow` needs Flow Run create; Flow Definition and
+- REST: `save_flow_definition` (current path `huf.ai.flow.api.save_flow_definition`) needs Flow Definition write; `run_flow` needs Flow Run create; Flow Definition and
   Flow Run roles are System Manager, Huf Manager, Huf User (Flow Definition also Huf Viewer).
 - Builder tools (`huf/ai/tools/builder.py`) require System Manager or Huf Manager; an agent run as a lower user cannot author flows.
-- `set_flow_trigger` (schedule / doc_event) converts the Flow to an Agent Procedure plus an Automation; it refuses Flows containing
-  `agent.run`, `router.llm` or `human.approval`, and takes `run_as_user` (default: caller).
+- Schedule and doc-event firing are `trigger.schedule` / `trigger.doc-event` nodes on current builds; there is no `set_flow_trigger`.
 
 Source: huf/ai/gateway_service.py, huf/ai/flow_api.py, huf/ai/tools/builder.py
 
 ## Creating a flow (post-sync)
-1. Build the graph JSON; validate offline (`recipes` shows the command) or just save as Draft: the save runs the same validator.
-2. Create: `POST /api/method/huf.ai.flow_api.save_flow_definition` with `flow_id`, `definition_json` (object or string); creates a
-   Draft (name = `flow_id`; `flow_name` defaults to it) or updates and bumps `version`. Or Desk: new Flow Definition.
-   Template: `templates/target1/flow_definition.json.template`; example graph: `templates/target1/examples/whatsapp_triage_flow.json`.
-3. Activate: set `status` to `Active` (`PUT /api/resource/Flow Definition/<flow_id>`); activation problems are listed in the error.
-4. Test with no WhatsApp: `POST /api/method/huf.ai.flow_api.run_flow` `{flow_id, payload}` (synchronous, trigger_type Manual), then
-   `get_flow_run` (status, `context_json`, `last_error`). Other whitelisted calls: `list_flow_runs`, `resume_flow_run`,
-   `approve_flow_run`, `reject_flow_run`, `get_node_schemas`.
-5. Route a Gateway to it (Gateway `default_target_type` Flow + `default_flow`, or a Gateway Binding).
-Saving a flow edits the Flow Definition; a run keeps the graph it started with (pinned snapshot).
-
-Source: huf/ai/flow_api.py, huf/huf/doctype/flow_definition/flow_definition.py
+Superseded. Use `references/flows-authoring.md` sections 6 and 7 (`save_flow_definition`, `validate_flow_definition`,
+`publish_flow`, `run_flow` with `mode="test"`, `get_flow_run`) under `huf.ai.flow.api.*`. Do not set `status` through
+`PUT /api/resource`.
+Template: `templates/target1/flow_definition.json.template`; example graph: `templates/target1/examples/whatsapp_triage_flow.json`.
 
 ## Known limits
 - No multi-turn without state nodes: each inbound message is a new run; carry context with `state.set` keyed by sender.
 - `context["outputs"]` / node outputs live in memory for one execution pass; they are not written to `context_json`, so they are
   not kept across a pause/resume (`Waiting Approval`, `Waiting User`). Re-derive or `state.set` what you need after a pause.
-- No node produces `Waiting User`; there is no wait-for-reply node, approval timeout sweep, cancel status, or per-sender run lock.
-  Two quick messages can run in parallel.
+- Pre-develop only: no wait-for-reply node and no per-sender run lock; two quick messages can run in parallel. Current builds add
+  Waiting Code and Cancelled statuses, approval timeouts (`timeout_next`) and `cancel_flow_run`; see `flows-authoring.md` sections 1, 7 and 10.
 - Interactive taps arrive as new events (`interactive_reply`) that start a new run, not a resume of an old one.
-- Run status values: Queued, Running, Waiting Approval, Waiting User, Success, Failed.
+- Pre-develop run status values: Queued, Running, Waiting Approval, Waiting User, Success, Failed (current builds also have Waiting Code and Cancelled).
 - No flow seed directory: apps cannot ship flows through `app_seeding`.
 - `max_wall_time_ms` and hop budget (default 100) bound runs; the enqueue timeout for gateway runs is 300 s.
 
