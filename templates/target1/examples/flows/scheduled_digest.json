@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "profile": "flow",
+  "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+  "entry": "t",
+  "nodes": [
+    {
+      "id": "t",
+      "type": "trigger.schedule",
+      "config": {
+        "cron": "0 9 * * 1-5",
+        "time_zone": "Asia/Kolkata"
+      },
+      "next": "summary"
+    },
+    {
+      "id": "summary",
+      "type": "agent.run",
+      "config": {
+        "agent": "Ops Assistant",
+        "prompt": "Write a five-line morning digest for the operations team. Check open tasks and anything overdue using your tools, and keep it factual."
+      },
+      "next": "post"
+    },
+    {
+      "id": "post",
+      "type": "tool.call",
+      "config": {
+        "tool_id": "slack_send_message",
+        "input": {
+          "channel": "#ops",
+          "text": {
+            "$from": "summary"
+          }
+        }
+      },
+      "next": "done"
+    },
+    {
+      "id": "done",
+      "type": "output",
+      "config": {
+        "value": {
+          "$from": "summary"
+        }
+      }
+    }
+  ],
+  "contract": {
+    "input_schema": {},
+    "output_schema": {},
+    "applies_when": [],
+    "permission_envelope": {
+      "read": [],
+      "write": [],
+      "http": "none",
+      "code": "none"
+    },
+    "limits": {
+      "max_nodes": 20,
+      "max_rows": 1000,
+      "max_output_bytes": 100000,
+      "max_parallel_calls": 1,
+      "max_foreach_iterations": 100,
+      "max_external_calls": 10,
+      "max_writes": 0,
+      "max_wall_time_ms": 120000,
+      "fail_closed": true
+    }
+  }
+}

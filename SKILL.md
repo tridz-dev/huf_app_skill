@@ -40,7 +40,7 @@ Ask the user the following questions. Use bench detection only to pre-fill a sug
    - external API (Target 2) → `references/api-v1.md` (endpoints and scopes that exist today; the Target 2 plan steps stay in this file's Target 2 section)
 
    Ask each reference's own "decision questions" only for the capabilities the user said yes to.
-9. **Flows, voice and media depth (Target 1 only)** — Ask: **"Should the agent talk to people on a messaging channel (WhatsApp), do any steps need to be deterministic (keyword routing, canned replies, no LLM), and does it handle voice/audio/images/documents?"** If yes to any, read the matching reference in "Reference Templates" below (WhatsApp operations -> `references/whatsapp-gateway.md`, after `references/gateways-and-whatsapp.md`; outside the 24h window -> `references/whatsapp-templates.md`; non-LLM -> `references/flows.md`; voice/media -> `references/audio-and-media.md`; worked builds -> `references/end-to-end-recipes.md`).
+9. **Flows, voice and media depth (Target 1 only)** — Ask: **"Should the agent talk to people on a messaging channel (WhatsApp), do any steps need to be deterministic (keyword routing, canned replies, no LLM), and does it handle voice/audio/images/documents?"** If yes to any, read the matching reference in "Reference Templates" below (WhatsApp operations -> `references/whatsapp-gateway.md`, after `references/gateways-and-whatsapp.md`; outside the 24h window -> `references/whatsapp-templates.md`; non-LLM -> `references/flows.md`; building, testing and publishing any flow -> `references/flows-authoring.md`; voice/media -> `references/audio-and-media.md`; worked builds -> `references/end-to-end-recipes.md`).
 
 ### Availability tags
 
@@ -229,7 +229,8 @@ The app seeder imports only prompts, tools, knowledge, agents and triggers. **Ga
 
 1. **Confirm sync** — Verify the app manifest synced and appears in the HUF App list.
 2. **Test the agent** — Run one test turn with the agent (via the chat interface or API call). Confirm it responds correctly.
-2a. **If a Gateway/flow was set up** — check gateway health (see `references/whatsapp-gateway.md`), dry-run each Flow Definition with a sample event, then do a live check following `references/testing-and-pitfalls.md` (fake graph, then `tools/wa_live_smoke.py` on an isolated site). Confirm exactly one reply per inbound event.
+2a. **If a Flow is part of the plan** — before saving it, run `scripts/validate_flow_examples.py --huf-repo <huf checkout> <flow.json>`; then follow `references/flows-authoring.md` (save as Draft, validate in publish mode, TEST run, ask the owner before publish or any real run). Never put secrets in a flow.
+2b. **If a Gateway/flow was set up** — check gateway health (see `references/whatsapp-gateway.md`), dry-run each Flow Definition with a sample event, then do a live check following `references/testing-and-pitfalls.md` (fake graph, then `tools/wa_live_smoke.py` on an isolated site). Confirm exactly one reply per inbound event.
 3. **Summarize what was created**:
    - App ID and delivery method
    - List of seeded DocTypes and their IDs
@@ -311,11 +312,14 @@ Starting-point JSON schemas and code templates are located in this skill's `temp
 - **templates/target1/** (additions)
   - `flow_definition.json.template` — Flow Definition record; read when creating a flow post-sync
   - `examples/whatsapp_triage_flow.json` — working non-LLM triage flow; read when building keyword routing
+  - `examples/flows/*.json` — six validated flows (CRM follow-up with approval, ERP order routing, webhook to Sheets, scheduled digest, doc-event reaction, gateway reply)
+  - `scripts/validate_flow_examples.py --huf-repo <huf checkout> <file>` — validate any flow JSON offline against the Huf schema and validator before saving
 
 - **references/** — read only the file the Step 1 answers need
   - `whatsapp-gateway.md` — read when the agent/flow talks on WhatsApp (gateway setup, tokens, access/pairing, 24h window, send actions, health)
   - `whatsapp-templates.md` — read when sending outside the 24h window, creating templates, or using Meta's MCP
   - `flows.md` — read when any step must be deterministic/non-LLM (node catalogue, state, conditions, triggers)
+  - `flows-authoring.md` — read BEFORE creating any Flow Definition: triggers, all node types, value forms, draft vs publish validation, whitelisted API, test-run simulation, debugging, safety rules, checklist
   - `end-to-end-recipes.md` — read for full worked builds (triage flow, agent with voice replies, template notification) and known gaps
   - `audio-and-media.md` — read when handling voice, audio, images or documents inbound/outbound
   - `models-and-keys.md` — read when choosing STT/TTS/image models and provider keys

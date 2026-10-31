@@ -9,7 +9,7 @@
     "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
     "entry": "start",
     "nodes": [
-      { "id": "start", "type": "trigger.webhook", "config": { "method": "POST" }, "next": "normalise" },
+      { "id": "start", "type": "trigger.webhook", "config": { "method": "POST", "secret": "REPLACE-WITH-GENERATED-SECRET-0000000000" }, "next": "normalise" },
       {
         "id": "normalise",
         "type": "transform",

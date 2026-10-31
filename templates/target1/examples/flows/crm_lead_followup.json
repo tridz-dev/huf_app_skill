@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0.0",
+  "profile": "flow",
+  "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+  "entry": "t",
+  "nodes": [
+    {
+      "id": "t",
+      "type": "trigger.webhook",
+      "config": {
+        "method": "POST",
+        "secret": "REPLACE-WITH-GENERATED-SECRET-0000000000"
+      },
+      "next": "draft"
+    },
+    {
+      "id": "draft",
+      "type": "agent.run",
+      "config": {
+        "agent": "Sales Assistant",
+        "prompt": "Write a short, friendly follow-up email (under 120 words, plain text, no subject line) to {name} at {company} who asked about: {interest}.",
+        "prompt_bindings": {
+          "name": {
+            "$from": "input.name"
+          },
+          "company": {
+            "$from": "input.company"
+          },
+          "interest": {
+            "$from": "input.interest"
+          }
+        }
+      },
+      "next": "approve"
+    },
+    {
+      "id": "approve",
+      "type": "human.approval",
+      "config": {
+        "title": "Send follow-up to {input.name}?",
+        "message": "Review the drafted email for {input.name} before it is sent.",
+        "approver_type": "role",
+        "approver_role": "Sales Manager",
+        "details": [
+          {
+            "label": "Lead",
+            "value": {
+              "$from": "input.name"
+            }
+          },
+          {
+            "label": "Company",
+            "value": {
+              "$from": "input.company"
+            }
+          },
+          {
+            "label": "Draft",
+            "value": {
+              "$from": "draft"
+            }
+          }
+        ],
+        "approve_next": "email",
+        "reject_next": "rejected",
+        "timeout_next": "rejected",
+        "timeout_ms": 86400000
+      }
+    },
+    {
+      "id": "email",
+      "type": "tool.call",
+      "config": {
+        "tool_id": "gmail_send_email",
+        "input": {
+          "to": {
+            "$from": "input.email"
+          },
+          "subject": {
+            "$template": "Following up, {name}",
+            "vars": {
+              "name": {
+                "$from": "input.name"
+              }
+            }
+          },
+          "body": {
+            "$from": "draft"
+          }
+        }
+      },
+      "next": "slack"
+    },
+    {
+      "id": "slack",
+      "type": "tool.call",
+      "config": {
+        "tool_id": "slack_send_message",
+        "input": {
+          "channel": "#sales",
+          "text": {
+            "$template": "Follow-up sent to {name} ({company}).",
+            "vars": {
+              "name": {
+                "$from": "input.name"
+              },
+              "company": {
+                "$from": "input.company"
+              }
+            }
+          }
+        }
+      },
+      "next": "sent"
+    },
+    {
+      "id": "sent",
+      "type": "output",
+      "config": {
+        "value": "sent",
+        "outcome": {
+          "label": "Follow-up sent",
+          "tone": "good"
+        }
+      }
+    },
+    {
+      "id": "rejected",
+      "type": "output",
+      "config": {
+        "value": "not sent",
+        "outcome": {
+          "label": "Not sent",
+          "tone": "neutral"
+        }
+      }
+    }
+  ],
+  "contract": {
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name"
+        },
+        "email": {
+          "type": "string"
+        },
+        "company": {
+          "type": "string"
+        },
+        "interest": {
+          "type": "string"
+        }
+      }
+    },
+    "output_schema": {},
+    "applies_when": [],
+    "permission_envelope": {
+      "read": [],
+      "write": [],
+      "http": "none",
+      "code": "none"
+    },
+    "limits": {
+      "max_nodes": 20,
+      "max_rows": 1000,
+      "max_output_bytes": 100000,
+      "max_parallel_calls": 1,
+      "max_foreach_iterations": 100,
+      "max_external_calls": 10,
+      "max_writes": 0,
+      "max_wall_time_ms": 120000,
+      "fail_closed": true
+    }
+  }
+}

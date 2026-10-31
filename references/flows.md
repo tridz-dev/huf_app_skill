@@ -1,5 +1,7 @@
 # Flows: deterministic (non-LLM) workflows
 
+> Written against `pre-develop`. For the current `huf/ai/flow/` code (webhook secret, triggers, approvals, test runs, publish rules, whitelisted API names) read `references/flows-authoring.md` first; it wins on any conflict.
+
 Read when Step 1 says "a WhatsApp/webhook/doc-event workflow with fixed rules" (menus, keyword triage, hand-off rows,
 templated replies) and an LLM is not needed. Flows are NOT seedable: the app seeder only takes
 `prompts, tools, knowledge, agents, triggers`. Create flows after sync through REST or Desk (see "Creating a flow").

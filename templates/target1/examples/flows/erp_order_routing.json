@@ -1,0 +1,153 @@
+{
+  "schema_version": "1.0.0",
+  "profile": "flow",
+  "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+  "entry": "t",
+  "nodes": [
+    {
+      "id": "t",
+      "type": "trigger.doc-event",
+      "config": {
+        "doctype": "Sales Order",
+        "event": "after_insert"
+      },
+      "next": "big"
+    },
+    {
+      "id": "big",
+      "type": "condition",
+      "config": {
+        "expression": "input['grand_total'] >= 100000",
+        "on_true": "approve",
+        "on_false": "notify_small"
+      }
+    },
+    {
+      "id": "approve",
+      "type": "human.approval",
+      "config": {
+        "title": "Large order {input.name}",
+        "message": "Order {input.name} is above the approval limit.",
+        "approver_type": "role",
+        "approver_role": "Sales Manager",
+        "details": [
+          {
+            "label": "Customer",
+            "value": {
+              "$from": "input.customer"
+            }
+          },
+          {
+            "label": "Total",
+            "value": {
+              "$from": "input.grand_total"
+            }
+          }
+        ],
+        "approve_next": "notify_big",
+        "reject_next": "held",
+        "timeout_next": "held",
+        "timeout_ms": 172800000
+      }
+    },
+    {
+      "id": "notify_big",
+      "type": "tool.call",
+      "config": {
+        "tool_id": "slack_send_message",
+        "input": {
+          "channel": "#orders-large",
+          "text": {
+            "$template": "Approved large order {order} for {customer}.",
+            "vars": {
+              "order": {
+                "$from": "input.name"
+              },
+              "customer": {
+                "$from": "input.customer"
+              }
+            }
+          }
+        }
+      },
+      "next": "done_big"
+    },
+    {
+      "id": "notify_small",
+      "type": "tool.call",
+      "config": {
+        "tool_id": "slack_send_message",
+        "input": {
+          "channel": "#orders",
+          "text": {
+            "$template": "New order {order} for {customer}.",
+            "vars": {
+              "order": {
+                "$from": "input.name"
+              },
+              "customer": {
+                "$from": "input.customer"
+              }
+            }
+          }
+        }
+      },
+      "next": "done_small"
+    },
+    {
+      "id": "done_big",
+      "type": "output",
+      "config": {
+        "value": "approved",
+        "outcome": {
+          "label": "Approved",
+          "tone": "good"
+        }
+      }
+    },
+    {
+      "id": "done_small",
+      "type": "output",
+      "config": {
+        "value": "auto",
+        "outcome": {
+          "label": "Routed automatically",
+          "tone": "neutral"
+        }
+      }
+    },
+    {
+      "id": "held",
+      "type": "output",
+      "config": {
+        "value": "held",
+        "outcome": {
+          "label": "Held",
+          "tone": "bad"
+        }
+      }
+    }
+  ],
+  "contract": {
+    "input_schema": {},
+    "output_schema": {},
+    "applies_when": [],
+    "permission_envelope": {
+      "read": [],
+      "write": [],
+      "http": "none",
+      "code": "none"
+    },
+    "limits": {
+      "max_nodes": 20,
+      "max_rows": 1000,
+      "max_output_bytes": 100000,
+      "max_parallel_calls": 1,
+      "max_foreach_iterations": 100,
+      "max_external_calls": 10,
+      "max_writes": 0,
+      "max_wall_time_ms": 120000,
+      "fail_closed": true
+    }
+  }
+}

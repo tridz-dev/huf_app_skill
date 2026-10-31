@@ -144,6 +144,7 @@ them) and are documented in `references/`.
 | `references/whatsapp-gateway.md` | Gateway setup, access, 24h window, send actions |
 | `references/whatsapp-templates.md` | Templates, template guard, MCP approval |
 | `references/flows.md` | Flow engine nodes and triggers |
+| `references/flows-authoring.md` | Authoring Flows: create, validate, publish, test-run, debug; six validated examples |
 | `references/end-to-end-recipes.md` | Worked builds and known gaps |
 | `references/audio-and-media.md` | Voice, audio, image and document handling |
 | `references/models-and-keys.md` | Model catalogue and provider keys |
