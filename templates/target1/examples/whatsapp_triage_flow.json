@@ -8,7 +8,8 @@
       "id": "start",
       "type": "trigger.webhook",
       "config": {
-        "method": "POST"
+        "method": "POST",
+        "secret": "REPLACE-WITH-GENERATED-SECRET-0000000000"
       },
       "next": "trim"
     },
