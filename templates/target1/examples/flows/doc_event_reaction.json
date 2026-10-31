@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0.0",
+  "profile": "flow",
+  "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+  "entry": "t",
+  "nodes": [
+    {
+      "id": "t",
+      "type": "trigger.doc-event",
+      "config": {
+        "doctype": "Lead",
+        "event": "after_insert"
+      },
+      "next": "has_email"
+    },
+    {
+      "id": "has_email",
+      "type": "condition",
+      "config": {
+        "expression": "input['email_id'] not in [None, '', [], {}]",
+        "on_true": "todo",
+        "on_false": "skip"
+      }
+    },
+    {
+      "id": "todo",
+      "type": "doc.create",
+      "config": {
+        "doctype": "ToDo",
+        "fields": {
+          "description": {
+            "$template": "Call new lead {lead} ({email})",
+            "vars": {
+              "lead": {
+                "$from": "input.lead_name"
+              },
+              "email": {
+                "$from": "input.email_id"
+              }
+            }
+          },
+          "priority": "Medium"
+        }
+      },
+      "next": "ok"
+    },
+    {
+      "id": "ok",
+      "type": "output",
+      "config": {
+        "value": {
+          "$from": "todo"
+        },
+        "outcome": {
+          "label": "To-do created",
+          "tone": "good"
+        }
+      }
+    },
+    {
+      "id": "skip",
+      "type": "output",
+      "config": {
+        "value": "no email",
+        "outcome": {
+          "label": "Skipped: no email",
+          "tone": "neutral"
+        }
+      }
+    }
+  ],
+  "contract": {
+    "input_schema": {},
+    "output_schema": {},
+    "applies_when": [],
+    "permission_envelope": {
+      "read": [],
+      "write": [
+        {
+          "doctype": "ToDo"
+        }
+      ],
+      "http": "none",
+      "code": "none"
+    },
+    "limits": {
+      "max_nodes": 20,
+      "max_rows": 1000,
+      "max_output_bytes": 100000,
+      "max_parallel_calls": 1,
+      "max_foreach_iterations": 100,
+      "max_external_calls": 10,
+      "max_writes": 1,
+      "max_wall_time_ms": 120000,
+      "fail_closed": true
+    }
+  }
+}

@@ -1,4 +1,5 @@
 {
+  "_note": "Indicative: verify against the target build (graph_ir.schema.json, validate_flow) at build time.",
   "doctype": "Flow Definition",
   "flow_id": "<FLOW_ID>",
   "flow_name": "<FLOW_NAME>",
@@ -9,7 +10,7 @@
     "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
     "entry": "start",
     "nodes": [
-      { "id": "start", "type": "trigger.webhook", "config": { "method": "POST" }, "next": "normalise" },
+      { "id": "start", "type": "trigger.webhook", "config": { "method": "POST", "secret": "REPLACE-WITH-GENERATED-SECRET-0000000000" }, "next": "normalise" },
       {
         "id": "normalise",
         "type": "transform",

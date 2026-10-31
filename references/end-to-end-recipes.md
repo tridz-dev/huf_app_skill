@@ -2,7 +2,7 @@
 
 Three worked builds. Placeholders in angle brackets: `<SITE_URL>`, `<KEY>:<SECRET>` (API key and secret of a System Manager
 or Huf Manager), `<GATEWAY>`, `<EXEC_USER>`, `<FLOW_ID>`, `<AGENT>`. Gateways, WhatsApp accounts, templates and flows are NOT
-seed folders: create them after sync. Concepts: `references/flows.md`; Gateway setup: `references/whatsapp-gateway.md`;
+seed folders: create them after sync. Flow authoring and API: `references/flows-authoring.md` (the older `references/flows.md` is pre-develop only); Gateway setup: `references/whatsapp-gateway.md`;
 templates: `references/whatsapp-templates.md`; voice: `references/audio-and-media.md`.
 
 Source: huf/ai/app_seeding/seeder.py
@@ -45,23 +45,23 @@ How it branches: `input.message` -> `trim` -> `lower` -> `state.get` key `wa:<se
    Expected `True []`. Needs `jsonschema` installed.
 3. Create the Draft (the save runs the same validator):
    ```
-   curl -sS -X POST "<SITE_URL>/api/method/huf.ai.flow_api.save_flow_definition" \
+   curl -sS -X POST "<SITE_URL>/api/method/huf.ai.flow.api.save_flow_definition" \
      -H "Authorization: token <KEY>:<SECRET>" -H "Content-Type: application/json" \
      -d "$(jq -n --slurpfile d templates/target1/examples/whatsapp_triage_flow.json '{flow_id:"<FLOW_ID>",definition_json:$d[0]}')"
    ```
-4. Activate: `curl -sS -X PUT "<SITE_URL>/api/resource/Flow%20Definition/<FLOW_ID>" -H "Authorization: token <KEY>:<SECRET>" -H "Content-Type: application/json" -d '{"status":"Active"}'`
-   (errors list every activation problem at once).
+4. Publish (only when the owner has asked): `curl -sS -X POST "<SITE_URL>/api/method/huf.ai.flow.api.publish_flow" -H "Authorization: token <KEY>:<SECRET>" -H "Content-Type: application/json" -d '{"flow_id":"<FLOW_ID>"}'`
+   (the refusal message lists what is unfinished; check first with `validate_flow_definition`, mode `publish`).
 5. Smoke-run without WhatsApp (synchronous, trigger Manual; the caller needs ToDo create rights):
    ```
-   curl -sS -X POST "<SITE_URL>/api/method/huf.ai.flow_api.run_flow" -H "Authorization: token <KEY>:<SECRET>" \
+   curl -sS -X POST "<SITE_URL>/api/method/huf.ai.flow.api.run_flow" -H "Authorization: token <KEY>:<SECRET>" \
      -H "Content-Type: application/json" \
-     -d '{"flow_id":"<FLOW_ID>","payload":{"message":"  REFUND please ","sender_id":"15550001111"}}'
+     -d '{"flow_id":"<FLOW_ID>","payload":{"message":"  REFUND please ","sender_id":"15550001111"},"mode":"test"}'
    ```
    Expect `"status":"Success"`. Send the second message `Order 4521` with the same `sender_id`, then check:
    - `GET <SITE_URL>/api/resource/ToDo?filters=[["description","like","Refund request for order #4521%"]]` returns one row;
    - `GET <SITE_URL>/api/resource/Flow State?filters=[["flow_id","=","<FLOW_ID>"]]` is empty after message 2 (and has a row
      `wa:15550001111` after message 1);
-   - `GET <SITE_URL>/api/method/huf.ai.flow_api.get_flow_run?flow_run_id=<RUN>` shows `status` and `last_error`.
+   - `GET <SITE_URL>/api/method/huf.ai.flow.api.get_flow_run?flow_run_id=<RUN>` shows `status` and `last_error`.
    The reply text itself is not stored (node outputs are in memory); it is only observable on a real Gateway run, or in a Huf test
    that spies `GraphContext.record_output` (`huf/ai/tests/test_flow_triage_e2e.py`).
 6. Route the Gateway: set `default_target_type` = Flow and `default_flow` = `<FLOW_ID>` on Gateway `<GATEWAY>`, or add a Gateway
@@ -114,7 +114,7 @@ Goal: send an approved WhatsApp template (e.g. "refund received, order {{1}}") f
 What works in R (pre-develop): a Gateway-triggered Flow sending a template to the sender who just wrote in.
 What does NOT work in R: a template sent from a doc event or schedule (e.g. Sales Order submitted -> notify customer). Reasons,
 all confirmed in code: (1) the WhatsApp tool takes its gateway only from a Gateway Event of the run or a trusted node binding;
-doc-event / schedule runs (via `set_flow_trigger`, an Automation) have neither, so the tool returns `gateway_context_required`;
+doc-event / schedule runs (trigger nodes `trigger.doc-event` / `trigger.schedule`) have neither, so the tool returns `gateway_context_required`;
 (2) `tool.call.config.gateway` is rejected by the graph schema, so the node-level binding cannot be saved; (3) Automation
 `target_type` is Agent or Agent Procedure only. Do not promise proactive doc-event messaging with a Flow; say so in the plan.
 
@@ -139,23 +139,22 @@ doc-event / schedule runs (via `set_flow_trigger`, an Automation) have neither, 
 4. Verify: Meta delivers the template (Gateway Event `Succeeded`, the phone shows the template); then the text reply
    follows. A recipient who opted out is suppressed.
 5. To prove the doc-event limitation on your build before promising anything: save a flow `trigger.doc-event` -> `tool.call`
-   (`send_template`), call `huf.ai.flow_api.set_flow_trigger` (`flow_id`, `trigger_type="doc_event"`, `reference_doctype`,
-   `doc_event`), fire the event, read the run output: expect `gateway_context_required`. If a newer Huf adds a gateway binding for
-   doc-event runs, re-check `references/flows.md` first.
+   (`send_template`), publish it (with the owner's go-ahead), fire the event, read the run output: expect `gateway_context_required`. If a newer Huf adds a gateway binding for
+   doc-event runs, re-check `references/flows-authoring.md` section 11 first.
 
 ### Pitfalls
 - Two messages (template then text reply) can look like a duplicate; use one or the other unless both are intended.
 - Template parameters are strings; format dates and amounts before (`concat`, `replace`).
 - Not confirmed: Meta-side delivery receipts feeding back into the Flow Run (none stored on the run).
 
-Source: huf/ai/tools/whatsapp.py, huf/ai/flow_engine.py, huf/ai/graph/graph_ir.schema.json, huf/huf/doctype/automation/automation.json
+Source: huf/ai/tools/whatsapp.py, huf/ai/flow/engine.py, huf/ai/graph/graph_ir.schema.json, huf/huf/doctype/automation/automation.json
 
 ## Known gaps found while documenting
 
 Verify each against your Huf version before relying on the workaround.
 
 - No deterministic (non-LLM) doc-event or schedule-triggered WhatsApp send: the WhatsApp tool takes its gateway only from a Gateway Event, and `tool.call.config.gateway` is rejected by the schema. Proactive sends need an Agent or a gateway-event flow.
-- `agent.run` / `router.llm` schema field names (`agent`, `router.llm`) differ from what the engine reads (`agent_name`, `router_agent_name`). Verify in `flow_engine.py` before use.
+- Pre-develop only: `agent.run` / `router.llm` schema field names differed from what the engine read. On builds with `huf/ai/flow/` the engine reads `config.agent` (`engine.py`); see `flows-authoring.md` section 5.
 - `http_request`, `loop` and `end` are not saveable Flow node types.
 - Node outputs are not kept across pause/resume (e.g. after `human.approval`); re-derive values from state.
 - Docs lag code for template header types: VIDEO/LOCATION, COPY_CODE buttons and NAMED variables are accepted; AUTHENTICATION is rejected.
