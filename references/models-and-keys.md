@@ -92,3 +92,33 @@ Source: huf/ai/handlers/media.py (_gemini_tts_completion, _pcm16_to_wav); huf/ai
 - ffmpeg/libopus missing on the worker host: voice replies silently fall back to text; health shows `voice_reply_ffmpeg_missing`.
 
 Source: huf/ai/whatsapp_health.py; huf/ai/tools/_registry.py; huf/ai/handlers/media.py
+
+## 8. AI Model fields you may read
+
+Reading is safe through `GET /api/resource/AI Model` (Huf Manager and Huf User can read; only System Manager writes). **Indicative: verify field names on the target build.**
+
+| Field | Use |
+|---|---|
+| `provider` | Which AI Provider (and so which key) the model uses |
+| `model_name` | Name to pick; copy exactly into `model` / `stt_model` / `tts_model` / `image_generation_model` |
+| `modalities` | Must include the modality the agent field needs (section 2) |
+| `supports_reasoning`, `reasoning_config_override` | Reasoning controls; owner decision to override |
+| `is_latest_alias` | Alias row that may move to a newer model |
+| `context_window`, `max_output_tokens` | Size limits to show in the pick-list |
+| `use_custom_pricing`, `input_cost_per_1m_tokens`, `output_cost_per_1m_tokens`, `cached_input_cost_per_1m_tokens`, `cached_input_write_cost_per_1m_tokens` | Cost display; see `references/usage-and-limits.md` |
+| `disable_ask_user`, `disable_rich_elements`, `disable_document_artifacts` | Chat capability overrides |
+
+From **AI Provider** you may read `provider_name`, `provider_brand`, `is_local_llm`, `url`, `port`, `api_base_url`, `timeout_seconds`. Never read `api_key`: it is a Password field, the list API does not return it, and you must not unmask it with `get_password`. If a probe shows a masked value, leave it.
+
+## 9. Who writes what
+
+| Object | Who may write | Skill's role |
+|---|---|---|
+| AI Provider `api_key` | System Manager, in the UI. A human step. | Tell the owner which provider needs a key; never ask for the key in chat, never write it to any file |
+| AI Provider (other fields) | System Manager | Read only |
+| AI Model rows and custom pricing | System Manager | Prefer the auto-seeded catalogue; custom rows are an owner decision |
+| Agent `provider` / `model` and media model fields | Seed file or Agent editor | Seed as `<AI_PROVIDER>` / `<AI_MODEL_NAME>` placeholders filled from the owner's choice |
+| Agent Settings (spend cap, limits) | System Manager | Recommend values, do not set (`references/usage-and-limits.md`) |
+| Gateway/WhatsApp/Telegram secrets, pgvector password | Owner in the UI | Never write or print; `stash_secret` is gateway-only and needs owner approval |
+
+Missing-key errors name the provider; the fix is always "owner enters the key on that AI Provider document".

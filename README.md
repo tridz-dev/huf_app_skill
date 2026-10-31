@@ -123,6 +123,9 @@ external API. For each one it reads the matching reference in
 - [`decision-runtime-jev.md`](references/decision-runtime-jev.md) — what the Decision Runtime is and why apps shouldn't depend on it yet
 - [`platform-surfaces.md`](references/platform-surfaces.md) — every platform surface and how each app target reaches it
 - [`api-v1.md`](references/api-v1.md) — the real `/huf/api/v1` routes, scopes, auth and errors
+- [`users-roles-permissions.md`](references/users-roles-permissions.md) — who can use the app, which roles and capabilities it needs, and why creating users and roles is an owner action
+- [`usage-and-limits.md`](references/usage-and-limits.md) — spend cap and run limits, where cost shows up, analytics
+- [`knowledge-and-skills.md`](references/knowledge-and-skills.md) — seeding knowledge, verifying search, uploads, prompt versions
 
 Each capability is tagged **[available]**, **[pending: PR]**,
 **[experimental/shadow]** or **[planned]**. The skill won't build on anything
@@ -149,6 +152,10 @@ them) and are documented in `references/`.
 | `references/audio-and-media.md` | Voice, audio, image and document handling |
 | `references/models-and-keys.md` | Model catalogue and provider keys |
 | `references/testing-and-pitfalls.md` | Testing and pitfall list |
+| `references/users-roles-permissions.md` | Default roles, capabilities per feature, owner-run user and role commands |
+| `references/usage-and-limits.md` | Run budget, per-agent limits, Agent Run cost, analytics |
+| `references/knowledge-and-skills.md` | SQLite FTS seed, `test_search`, uploads, prompt versioning |
+| `scripts/validate_agent_seed.py` | Read-only seed checker (keys, linked names, key-like strings, `allow_guest`) |
 | `templates/target1/` | Seed JSON templates, `flow_definition.json.template`, `examples/` |
 | `references/gateways-and-whatsapp.md`, `decision-runtime-jev.md`, `platform-surfaces.md`, `api-v1.md` | Capability references (see Capabilities above) |
 | `templates/target2/` | External client stubs |

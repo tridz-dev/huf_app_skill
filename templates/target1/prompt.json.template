@@ -1,6 +1,5 @@
 {
-  "_comment": "Agent Prompt seed file. Place at <myapp>/huf/prompts/<prompt_id>.json. Keyed on title.",
+  "_comment": "Agent Prompt seed file. Place at <myapp>/huf/prompts/<prompt_id>.json. Keyed on title. The text field is prompt_body. 'category' is a Link to Agent Prompt Category: add it only if that category already exists on the target site.",
   "title": "MY_PROMPT_TITLE",
-  "prompt": "You are a <role> assistant. Your task is to...",
-  "category": "Research"
+  "prompt_body": "You are a <role> assistant. Your task is to..."
 }
