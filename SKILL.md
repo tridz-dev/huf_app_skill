@@ -232,7 +232,7 @@ The app seeder imports only prompts, tools, knowledge, agents and triggers. **Ga
 ### Target 1
 
 1. **Confirm sync** — Verify the app manifest synced and appears in the HUF App list.
-1a. **Check the seed files** — run `scripts/validate_agent_seed.py --huf-repo <huf checkout> <myapp>/huf` (read-only; stdlib only). Fix every `ERROR`; surface `WARN` lines (e.g. `allow_guest`, unresolved model placeholders) to the owner.
+1a. **Check the seed files (after writing seeds, before sync)** — run `scripts/validate_agent_seed.py --huf-repo <huf checkout> <myapp>/huf` (read-only; stdlib only). Without `--huf-repo` only the secret, link and access checks run and the script says so. Fix every `ERROR`; surface `WARN` lines (e.g. `allow_guest`, unresolved model placeholders) to the owner.
 2. **Test the agent** — Run one test turn with the agent (via the chat interface or API call). Confirm it responds correctly.
 2a. **If a Flow is part of the plan** — before saving it, run `scripts/validate_flow_examples.py --huf-repo <huf checkout> <flow.json>` (needs `pip install jsonschema` in a clean venv; do not install pip's `frappe` package, it breaks the script; indicative: verify against the target build, `graph_ir.schema.json` and `validate_flow`, at build time); then follow `references/flows-authoring.md` (save as Draft, validate in publish mode, TEST run, ask the owner before publish or any real run). Never put secrets in a flow.
 2b. **If a Gateway/flow was set up** — check gateway health (see `references/whatsapp-gateway.md`), dry-run each Flow Definition with a sample event, then do a live check following `references/testing-and-pitfalls.md` (fake graph, then `tools/wa_live_smoke.py` on an isolated site). Confirm exactly one reply per inbound event.

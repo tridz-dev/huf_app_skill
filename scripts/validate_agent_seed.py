@@ -179,6 +179,10 @@ def check_file(rep: Report, f: Path, repo: Path | None, names: dict, cache: dict
 				continue
 			if k not in allowed:
 				rep.error(where, f"'{k}' is not a field of {doctype}")
+	if kind == "triggers":
+		ag = data.get("agent")
+		if ag and ag not in names["agents"]:
+			rep.warn(where, f"agent '{ag}' is not among the seeded agents; fine only if it already exists on the site")
 	if kind == "agents":
 		for field, sibling in (("tools", "tools"), ("knowledge", "knowledge")):
 			vals = data.get(field)
@@ -212,6 +216,8 @@ def main() -> int:
 		files = sorted((ROOT / "templates" / "target1").glob("*.json.template"))
 		files = [f for f in files if classify(f)]
 	rep = Report()
+	if args.huf_repo is None:
+		rep.warn("(all files)", "--huf-repo not given: the field-name check was SKIPPED; only secret, link and access checks ran, so 0 errors is not a full pass")
 	names = seeded_names(files)
 	cache: dict = {}
 	for f in files:
